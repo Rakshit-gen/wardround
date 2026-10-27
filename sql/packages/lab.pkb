@@ -142,6 +142,7 @@ create or replace package body lab as
     l_collected  date;
     l_reported   date;
     l_final      boolean;
+    l_done       varchar2(1);
     l_n          pls_integer := 0;
   begin
     loop
@@ -177,10 +178,12 @@ create or replace package body lab as
         end if;
       end loop;
 
+      -- SQL has no boolean before 23ai.
+      l_done := case when l_final then 'Y' else 'N' end;
       update orders
          set collected_dt = coalesce(collected_dt, l_collected),
-             verified_dt = case when l_final then coalesce(verified_dt, l_reported) else verified_dt end,
-             status = case when l_final then 'COMPLETED' else status end,
+             verified_dt = case when l_done = 'Y' then coalesce(verified_dt, l_reported) else verified_dt end,
+             status = case when l_done = 'Y' then 'COMPLETED' else status end,
              updated_at = sysdate
        where order_id = l_order.order_id;
     end loop;
