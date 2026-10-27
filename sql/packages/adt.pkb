@@ -174,6 +174,9 @@ create or replace package body adt as
     l_seg     pls_integer;
     l_ranked  boolean := false;
     l_n       pls_integer := 0;
+    l_code    varchar2(8);
+    l_text    varchar2(200);
+    l_kind    diagnoses.kind%type;
   begin
     if hl7.find(p_msg, 'DG1') is null then
       return;
@@ -188,18 +191,18 @@ create or replace package body adt as
     delete from diagnoses where encntr_id = p_encntr_id;
     for i in 1 .. l_n loop
       l_seg := hl7.find(p_msg, 'DG1', i);
-      if hl7.get(p_msg, l_seg, 3) is null then
+      l_code := substr(hl7.get(p_msg, l_seg, 3, 1), 1, 8);
+      if l_code is null then
         raise_application_error(wr_errors.bad_field, 'no diagnosis code in DG1-3 of DG1 number ' || i);
       end if;
+      l_text := substr(hl7.get(p_msg, l_seg, 3, 2), 1, 200);
+      if l_ranked and hl7.get(p_msg, l_seg, 15) = '1' or not l_ranked and i = 1 then
+        l_kind := 'PRINCIPAL';
+      else
+        l_kind := 'SECONDARY';
+      end if;
       insert into diagnoses (encntr_id, seq, icd10, description, kind)
-      values (p_encntr_id, i,
-              substr(hl7.get(p_msg, l_seg, 3, 1), 1, 8),
-              substr(hl7.get(p_msg, l_seg, 3, 2), 1, 200),
-              case
-                when l_ranked and hl7.get(p_msg, l_seg, 15) = '1' then 'PRINCIPAL'
-                when not l_ranked and i = 1 then 'PRINCIPAL'
-                else 'SECONDARY'
-              end);
+      values (p_encntr_id, i, l_code, l_text, l_kind);
     end loop;
   end diagnoses;
 
@@ -266,6 +269,7 @@ create or replace package body adt as
   procedure discharge(p_msg hl7.t_message) is
     l_enc    encounters%rowtype := registered_visit(p_msg);
     l_at     date := coalesce(hl7.ts(hl7.val(p_msg, 'PV1', 45)), event_time(p_msg));
+    l_disp   number := codes.lookup(c_disp, source(p_msg), hl7.val(p_msg, 'PV1', 36));
     l_later  pls_integer;
   begin
     if l_enc.status = 'CANCELLED' then
@@ -284,7 +288,7 @@ create or replace package body adt as
     update encounters
        set status = 'DISCHARGED',
            disch_dt = l_at,
-           disch_disp_cd = codes.lookup(c_disp, source(p_msg), hl7.val(p_msg, 'PV1', 36)),
+           disch_disp_cd = l_disp,
            updated_at = sysdate
      where encntr_id = l_enc.encntr_id;
     update encounter_locations
