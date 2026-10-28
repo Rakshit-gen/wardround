@@ -74,3 +74,19 @@ def test_every_report_runs(loaded, name):
     assert columns
     if name in ("census", "interface", "lab_turnaround", "ed_throughput"):
         assert rows
+
+
+def test_python_escaping_is_what_the_plsql_reader_unescapes(loaded):
+    conn, _, _ = loaded
+    family = "D'SOUZA^ & O|BRIEN~\\"
+    raw = hl7.message(
+        hl7.msh("REG", "ADT^A04^ADT_A01", datetime(2030, 2, 1, 9), "ESC1"),
+        hl7.segment("EVN", {1: "A04", 2: "20300201090000"}),
+        hl7.segment("PID", {1: "1", 3: "ESCM1^^^HOSP^MR", 5: hl7.escape(family) + "^ANA"}),
+        hl7.segment("PV1", {1: "1", 2: "E", 3: "ED^^", 19: "ESCF1"}),
+    )
+    assert hl7.ack_code(db.receive(conn, raw)) == "AA"
+    db.process(conn)
+    with conn.cursor() as cur:
+        cur.execute("select family_name, given_name from persons where mrn = 'ESCM1'")
+        assert cur.fetchone() == (family, "ANA")
