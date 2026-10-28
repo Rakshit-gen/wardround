@@ -110,6 +110,9 @@ class Feed:
         self.defects: Counter[str] = Counter()
         self._out: list[Outgoing] = []
         self._numbers: Counter[str] = Counter()
+        # In every number the feed makes up, so two feeds loaded into one
+        # database don't look like resends of each other.
+        self.tag = f"{seed % 100:02d}{start:%y%m%d}"
 
     # Numbers and people
 
@@ -121,7 +124,7 @@ class Feed:
         sex = self.rng.choice("FM")
         birth = datetime(1935, 1, 1) + timedelta(days=self.rng.randrange(70 * 365))
         return Patient(
-            mrn=f"M{self._next('mrn'):06d}",
+            mrn=f"M{self.tag}{self._next('mrn'):05d}",
             family=self.rng.choice(FAMILY),
             given=self.rng.choice(GIVEN_F if sex == "F" else GIVEN_M),
             birth=birth.strftime("%Y%m%d"),
@@ -129,7 +132,7 @@ class Feed:
         )
 
     def _visit(self, patient: Patient, patient_class: str) -> Visit:
-        return Visit(f"F{self._next('fin'):07d}", patient, patient_class)
+        return Visit(f"F{self.tag}{self._next('fin'):06d}", patient, patient_class)
 
     # Sending
 
@@ -144,7 +147,7 @@ class Feed:
             self._out.append(Outgoing(again, self._next("seq"), source, raw))
 
     def _control(self, source: str) -> str:
-        return f"{source}{self._next(source):08d}"
+        return f"{source}{self.tag}{self._next(source):08d}"
 
     def _pid(self, p: Patient) -> str:
         return hl7.segment("PID", {1: "1", 3: f"{p.mrn}^^^HOSP^MR",
@@ -196,7 +199,7 @@ class Feed:
     def _lab(self, v: Visit, test: str, ordered: datetime, stat: bool) -> None:
         """An order and its results. Stat orders are collected and run
         faster."""
-        placer = f"P{self._next('placer'):08d}"
+        placer = f"P{self.tag}{self._next('placer'):08d}"
         collected = ordered + timedelta(minutes=self.rng.uniform(5, 25) if stat
                                         else self.rng.uniform(20, 120))
         tat = _lognormal(self.rng, 28 if stat else 95, 0.45)

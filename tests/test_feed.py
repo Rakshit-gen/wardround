@@ -59,3 +59,18 @@ def test_defects_go_out_at_the_full_size():
     for kind in ("resend", "result_before_order", "order_before_registration",
                  "late_transfer", "unmapped_result"):
         assert feed.defects[kind] > 0, kind
+
+
+def test_two_feeds_share_no_numbers():
+    def numbers(feed):
+        out = set()
+        for o in feed.messages():
+            out.add(hl7.fields_of(o.raw, "MSH")[10])
+            out.add(hl7.fields_of(o.raw, "PV1")[19])
+            out.add(hl7.fields_of(o.raw, "PID")[3].split("^")[0])
+        return out
+
+    a = small()
+    b = Feed(seed=1, start=datetime(2030, 1, 1), days=2, ed_per_day=5, direct_per_day=1)
+    assert not numbers(a) & numbers(b)
+    assert max(len(n) for n in numbers(a)) <= 20
