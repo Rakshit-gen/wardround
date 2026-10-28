@@ -24,6 +24,7 @@ def generate(args) -> None:
         days=args.days,
         ed_per_day=args.ed_per_day,
         direct_per_day=args.direct_per_day,
+        defects=not args.clean,
     )
     messages = feed.messages()
     with open(args.out, "w", newline="") as f:
@@ -130,6 +131,7 @@ def main(argv=None) -> None:
     g.add_argument("--days", type=int, default=45)
     g.add_argument("--ed-per-day", type=int, default=30)
     g.add_argument("--direct-per-day", type=int, default=3)
+    g.add_argument("--clean", action="store_true", help="send nothing wrong on purpose")
     g.add_argument("--out", default="feed.hl7")
     g.set_defaults(func=generate)
 

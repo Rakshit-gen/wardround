@@ -99,6 +99,15 @@ RATES = {
     "correction": 0.01,
 }
 
+DEFECTS = {
+    "result_before_order",
+    "order_before_registration",
+    "late_transfer",
+    "resend",
+    "unmapped_unit",
+    "unmapped_result",
+}
+
 
 @dataclass
 class Patient:
@@ -137,8 +146,12 @@ class Feed:
         days: int = 45,
         ed_per_day: int = 30,
         direct_per_day: int = 3,
+        defects: bool = True,
     ):
         self.rng = random.Random(seed)
+        # Without defects the same random numbers are drawn, so a clean
+        # feed has the same patients and times as the one with defects.
+        self.rates = {k: 0.0 if k in DEFECTS and not defects else v for k, v in RATES.items()}
         self.start = start
         self.end = start + timedelta(days=days)
         self.ed_per_day = ed_per_day
@@ -177,7 +190,7 @@ class Feed:
             return
         send_at = send_at or at
         self._out.append(Outgoing(send_at, self._next("seq"), source, raw))
-        if self.rng.random() < RATES["resend"]:
+        if self.rng.random() < self.rates["resend"]:
             self.defects["resend"] += 1
             again = send_at + timedelta(seconds=30)
             self._out.append(Outgoing(again, self._next("seq"), source, raw))
@@ -273,12 +286,15 @@ class Feed:
         reported = collected + timedelta(minutes=tat)
 
         results = [self._value(spec) for spec in RESULTS[test]]
-        if self.rng.random() < RATES["unmapped_result"]:
+        # Drawn whether it's sent or not, so defects don't change the
+        # random numbers everything after them gets.
+        extra = self._value(UNMAPPED_LOINC)
+        if self.rng.random() < self.rates["unmapped_result"]:
             self.defects["unmapped_result"] += 1
-            results.append(self._value(UNMAPPED_LOINC))
+            results.append(extra)
 
         order_sent = None
-        if self.rng.random() < RATES["result_before_order"] and reported < self.end:
+        if self.rng.random() < self.rates["result_before_order"] and reported < self.end:
             self.defects["result_before_order"] += 1
             order_sent = reported + timedelta(minutes=1)
         orc = hl7.segment("ORC", {1: "NW", 2: placer, 9: hl7.ts(ordered)})
@@ -296,10 +312,10 @@ class Feed:
             order_sent,
         )
 
-        if test == "CBC" and self.rng.random() < RATES["preliminary"]:
+        if test == "CBC" and self.rng.random() < self.rates["preliminary"]:
             self._oru(v, placer, collected, collected + timedelta(minutes=tat * 0.6), results, "P")
         self._oru(v, placer, collected, reported, results, "F")
-        if self.rng.random() < RATES["correction"]:
+        if self.rng.random() < self.rates["correction"]:
             fixed = [self._value(spec) for spec in RESULTS[test]]
             self._oru(
                 v, placer, collected, reported + timedelta(hours=self.rng.uniform(2, 6)), fixed, "C"
@@ -308,13 +324,14 @@ class Feed:
     # Visits
 
     def _transfer(self, v: Visit, at: datetime, unit: str) -> None:
-        if unit == "4W" and self.rng.random() < RATES["unmapped_unit"]:
+        if unit == "4W" and self.rng.random() < self.rates["unmapped_unit"]:
             self.defects["unmapped_unit"] += 1
             unit = UNMAPPED_UNIT
         send_at = None
-        if self.rng.random() < RATES["late_transfer"]:
+        delay = timedelta(hours=self.rng.uniform(1, 3))
+        if self.rng.random() < self.rates["late_transfer"]:
             self.defects["late_transfer"] += 1
-            send_at = at + timedelta(hours=self.rng.uniform(1, 3))
+            send_at = at + delay
         self._adt("A02", at, v, unit, str(self.rng.randint(1, 40)), "A", send_at=send_at)
 
     def _inpatient(
@@ -324,7 +341,7 @@ class Feed:
         time if the patient went home or to care, so could come back."""
         stay = timedelta(days=_lognormal(self.rng, 3.2, 0.6))
         discharge = bed_at + stay
-        if self.rng.random() < RATES["icu"]:
+        if self.rng.random() < self.rates["icu"]:
             self._transfer(v, bed_at, "ICU")
             ward_at = bed_at + timedelta(hours=self.rng.uniform(24, 72))
             if ward_at < discharge - timedelta(hours=6):
@@ -356,7 +373,7 @@ class Feed:
         first_order = arrive + timedelta(minutes=self.rng.uniform(10, 45))
 
         registered_at = None
-        if self.rng.random() < RATES["order_before_registration"]:
+        if self.rng.random() < self.rates["order_before_registration"]:
             self.defects["order_before_registration"] += 1
             registered_at = first_order + timedelta(minutes=2)
         v.bed = str(self.rng.randint(1, 30))
@@ -403,10 +420,10 @@ class Feed:
             arrive, _, patient = heapq.heappop(arrivals)
             # Patients who come back are admitted again: that's what makes
             # it a readmission.
-            admit = patient is not None or self.rng.random() < RATES["admit"]
+            admit = patient is not None or self.rng.random() < self.rates["admit"]
             patient = patient or self._patient()
             discharge = self._ed_visit(patient, arrive, admit)
-            if discharge and self.rng.random() < RATES["readmit"]:
+            if discharge and self.rng.random() < self.rates["readmit"]:
                 back = discharge + timedelta(days=self.rng.uniform(2, 28))
                 if back < self.end:
                     heapq.heappush(arrivals, (back, self._next("arrival"), patient))

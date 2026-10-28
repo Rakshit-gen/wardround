@@ -80,3 +80,13 @@ def test_two_feeds_share_no_numbers():
     b = Feed(seed=1, start=datetime(2030, 1, 1), days=2, ed_per_day=5, direct_per_day=1)
     assert not numbers(a) & numbers(b)
     assert max(len(n) for n in numbers(a)) <= 20
+
+
+def test_a_clean_feed_has_the_same_visits_and_no_defects():
+    def visits(feed):
+        return {hl7.fields_of(o.raw, "PV1")[19] for o in feed.messages() if o.source == "REG"}
+
+    clean = Feed(defects=False)
+    clean.messages()
+    assert not clean.defects
+    assert visits(clean) == visits(Feed())
