@@ -41,7 +41,7 @@ create or replace package body inbound as
 
     l_at := time_or_null(hl7.val(l_msg, 'MSH', 7));
     begin
-      insert into hl7_messages (sending_app, control_id, message_type, event_dt, raw)
+      insert into hl7_messages (sending_app, control_id, message_type, event_dt, body)
       values (l_sender, l_control, l_type, l_at, p_raw)
       returning msg_id into l_id;
     exception
@@ -60,7 +60,7 @@ create or replace package body inbound as
     l_type   varchar2(4000);
     l_event  varchar2(4000);
   begin
-    select raw into l_raw from hl7_messages where msg_id = p_msg_id for update;
+    select body into l_raw from hl7_messages where msg_id = p_msg_id for update;
     savepoint before_message;
 
     l_msg := hl7.parse(l_raw);

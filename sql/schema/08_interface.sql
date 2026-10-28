@@ -22,7 +22,7 @@ create table hl7_messages (
   message_type  varchar2(10) not null,
   event_dt      date,
   received_at   timestamp default systimestamp not null,
-  raw           clob not null,
+  body          clob not null,
   status        varchar2(7) default 'NEW' not null
                 constraint hl7_messages_status_ck check (status in ('NEW', 'DONE', 'HELD', 'ERROR', 'IGNORED')),
   error         varchar2(400),
