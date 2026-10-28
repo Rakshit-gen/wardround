@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wardround"
-version = "0.1.0"
+version = "1.0.0"
 description = "Synthetic HL7 feeds, an MLLP listener and hospital reports for the wardround schema"
 readme = "README.md"
 license = "MIT"
