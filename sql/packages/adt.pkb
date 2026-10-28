@@ -170,7 +170,7 @@ create or replace package body adt as
   -- Replaces the visit's diagnoses with the message's DG1 segments, if
   -- it has any. DG1-15 = 1 marks the principal diagnosis; if no segment
   -- sets DG1-15, the first is taken as principal.
-  procedure diagnoses(p_msg hl7.t_message, p_encntr_id number) is
+  procedure replace_diagnoses(p_msg hl7.t_message, p_encntr_id number) is
     l_seg     pls_integer;
     l_ranked  boolean := false;
     l_n       pls_integer := 0;
@@ -204,7 +204,7 @@ create or replace package body adt as
       insert into diagnoses (encntr_id, seq, icd10, description, kind)
       values (p_encntr_id, i, l_code, l_text, l_kind);
     end loop;
-  end diagnoses;
+  end replace_diagnoses;
 
   -- A04, and A01 for a visit that wasn't registered first.
   procedure register(p_msg hl7.t_message, p_inpatient boolean) is
@@ -233,7 +233,7 @@ create or replace package body adt as
               disch_dt, disch_disp_cd, updated_at
          into l_enc;
     move(l_enc, l_at, location(p_msg));
-    diagnoses(p_msg, l_enc.encntr_id);
+    replace_diagnoses(p_msg, l_enc.encntr_id);
   end register;
 
   procedure admit(p_msg hl7.t_message) is
@@ -254,7 +254,7 @@ create or replace package body adt as
            updated_at = sysdate
      where encntr_id = l_enc.encntr_id;
     move(l_enc, greatest(l_at, l_enc.arrive_dt), location(p_msg));
-    diagnoses(p_msg, l_enc.encntr_id);
+    replace_diagnoses(p_msg, l_enc.encntr_id);
   end admit;
 
   procedure transfer(p_msg hl7.t_message) is
@@ -295,7 +295,7 @@ create or replace package body adt as
        set end_dt = l_at
      where encntr_id = l_enc.encntr_id
        and beg_dt = (select max(beg_dt) from encounter_locations where encntr_id = l_enc.encntr_id);
-    diagnoses(p_msg, l_enc.encntr_id);
+    replace_diagnoses(p_msg, l_enc.encntr_id);
   end discharge;
 
   procedure update_patient(p_msg hl7.t_message) is
@@ -305,7 +305,7 @@ create or replace package body adt as
     if hl7.val(p_msg, 'PV1', 19) is not null then
       l_enc := visit(fin(p_msg));
       if l_enc.encntr_id is not null then
-        diagnoses(p_msg, l_enc.encntr_id);
+        replace_diagnoses(p_msg, l_enc.encntr_id);
       end if;
     end if;
   end update_patient;
