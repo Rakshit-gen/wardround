@@ -61,3 +61,8 @@ def test_status_prints_every_state_and_points_at_errors(monkeypatch, capsys):
         "IGNORED        0",
     ]
     assert "interface_errors" in out[5]
+
+
+def test_timing_gives_one_run_or_the_median_and_range():
+    assert cli.timing([0.0123]) == "0.012 s"
+    assert cli.timing([0.3, 0.1, 0.2]) == "median 0.200 s, min 0.100 s, max 0.300 s over 3 runs"
