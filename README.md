@@ -188,6 +188,73 @@ Free in a container. One run, not an average.
 | PL/SQL compiler warnings beyond the accepted list | 0 |
 | Python | 44 unit tests on 3.10 and 3.13; 19 against the database (run 40689427855, after one more test was added) |
 
+## Benchmarks
+
+The bench workflow (`.github/workflows/bench.yml`) runs `scripts/bench.sh`
+on every push to main at one, three and nine times the default feed:
+30, 90 and 270 ED visits a day over the same 45 days, with the same
+share of messages sent wrong on purpose. Each size gets a freshly
+installed schema and a flushed shared pool. The run fails unless every
+ACK is AA and, after the two unmapped codes are mapped and the errors
+reprocessed, no message is left new, held or in error.
+
+From run 40696940097, 28 October 2026, commit fa96713, on a
+GitHub-hosted runner with 4 CPUs (AMD EPYC 9V74) and 15 GB, Oracle
+Database Free in a container, Python 3.13. One run of each size:
+
+| feed | messages | generate | sent over MLLP | applied | in error, then after mapping |
+|---|---:|---:|---:|---:|---:|
+| 1x | 17,437 | 0.59 s | 15.22 s, 1,146/s | 17,235 in 9.25 s, 1,863/s | 27, then 0 |
+| 3x | 52,868 | 1.57 s | 43.60 s, 1,213/s | 52,290 in 26.77 s, 1,953/s | 65, then 0 |
+| 9x | 160,463 | 4.66 s | 132.54 s, 1,211/s | 158,603 in 86.50 s, 1,834/s | 243, then 0 |
+
+Applied plus in error is the messages less the resends (175, 513 and
+1,617), which are acknowledged and not applied again. Sending is one
+message at a time, each committed before its ACK, so it's bound by
+round trips, not by size. Applying holds its rate as the tables grow.
+It didn't before commit fa96713: three times the feed applied at 670
+to 894 messages/s in five runs, from a lookup that full scanned the
+results table for every result (`docs/rca.md`, 6).
+
+The runners differ: run 40696939963 applied the same 3x feed, same
+commit, on an AMD EPYC 9V45 in 14.37 s, 3,640 messages/s. Read the
+table as how the steps scale, not as what a given machine will do.
+
+The March reports, median of 5 runs (fastest to slowest):
+
+| report | 1x | 3x | 9x |
+|---|---:|---:|---:|
+| census | 0.018 s (0.018 to 0.045) | 0.018 s (0.018 to 0.048) | 0.054 s (0.053 to 0.090) |
+| length_of_stay | 0.003 s (0.003 to 0.012) | 0.005 s (0.005 to 0.016) | 0.018 s (0.017 to 0.031) |
+| readmissions | 0.002 s (0.002 to 0.034) | 0.004 s (0.004 to 0.041) | 0.013 s (0.013 to 0.053) |
+| ed_throughput | 0.003 s (0.003 to 0.014) | 0.009 s (0.009 to 0.022) | 0.028 s (0.028 to 0.043) |
+| lab_turnaround | 0.010 s (0.009 to 0.023) | 0.029 s (0.029 to 0.046) | 0.095 s (0.094 to 0.125) |
+| lab_overdue | 0.001 s (0.001 to 0.012) | 0.003 s (0.002 to 0.013) | 0.007 s (0.007 to 0.019) |
+| interface | 0.014 s (0.014 to 0.042) | 0.046 s (0.045 to 0.113) | 0.144 s (0.144 to 0.297) |
+| interface_errors | 0.006 s (0.005 to 0.015) | 0.026 s (0.026 to 0.032) | 0.087 s (0.086 to 0.094) |
+
+The slowest of each five is well off the median, most likely the first
+run, which parses the statement; the bench doesn't print which it was.
+Reprocessing the errors took 0.30, 0.44 and 0.94 s.
+
+The Python side without a database, `bench/python.py` in the ci
+workflow, run 40698072695, on an AMD EPYC 7763, median of 5:
+
+| step | Python 3.10 | Python 3.13 |
+|---|---:|---:|
+| generate the default feed, 17,437 messages | 0.598 s | 0.529 s |
+| read PV1-19 from every message | 0.031 s | 0.033 s |
+| unframe the feed as MLLP, 5.6 MB in 64 KB reads | 0.027 s | 0.027 s |
+
+To run them, with the schema installed by `scripts/install.sh`:
+
+```
+SIZES="30:3 90:9 270:27" ./scripts/bench.sh
+python bench/python.py 5
+```
+
+or `make bench` and `make bench-python`.
+
 ## Tests
 
 - **utPLSQL** (`test/`): the HL7 reader, every ADT event including
@@ -215,7 +282,9 @@ reports/         one SELECT per report, and run.sql for SQL*Plus
 test/            utPLSQL suites
 wardround/       Python: feed, hl7, mllp, db, reports, cli
 tests/           pytest
-scripts/         ci.sh (database and utPLSQL), pipeline.sh (feed to reports)
+bench/           python.py, the Python side without a database
+scripts/         install.sh, ci.sh (database and utPLSQL), pipeline.sh
+                 (feed to reports), bench.sh (the path at several sizes)
 docs/            design, runbook, root cause analyses
 ```
 
