@@ -53,6 +53,40 @@ create or replace package body codes as
       return null;
   end meaning;
 
+  procedure map_alias(
+    p_set      number,
+    p_source   varchar2,
+    p_alias    varchar2,
+    p_meaning  varchar2,
+    p_display  varchar2 default null
+  ) is
+    l_cd   number;
+    l_was  number;
+  begin
+    begin
+      select code_value into l_cd from code_values where code_set = p_set and meaning = p_meaning;
+    exception
+      when no_data_found then
+        insert into code_values (code_set, meaning, display)
+        values (p_set, p_meaning, nvl(p_display, p_meaning))
+        returning code_value into l_cd;
+    end;
+
+    begin
+      select code_value into l_was
+        from code_value_aliases
+       where code_set = p_set and source = p_source and alias = p_alias;
+      if l_was <> l_cd then
+        raise_application_error(wr_errors.out_of_step,
+          p_source || ' code "' || p_alias || '" already maps to ' || meaning(l_was));
+      end if;
+    exception
+      when no_data_found then
+        insert into code_value_aliases (code_set, source, alias, code_value)
+        values (p_set, p_source, p_alias, l_cd);
+    end;
+  end map_alias;
+
   procedure reset is
   begin
     g_aliases.delete;

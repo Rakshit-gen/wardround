@@ -12,11 +12,13 @@ prompt Compiling tests
 @@test_adt.pks
 @@test_lab.pks
 @@test_inbound.pks
+@@test_codes.pks
 @@test_fixture.pkb
 @@test_hl7.pkb
 @@test_adt.pkb
 @@test_lab.pkb
 @@test_inbound.pkb
+@@test_codes.pkb
 
 @@../sql/check_errors.sql
 prompt Tests are installed
