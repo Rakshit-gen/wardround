@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- `lab` looks up a result's current version through the expressions of
+  `clinical_events_current_uk`, so it's a unique key lookup and not a
+  full scan of the results table. Three times the default feed now
+  applies at 1,953 messages/s instead of 670 to 894.
+- A bench workflow runs the whole path at one, three and nine times the
+  default feed on every push to main, each size on a fresh schema, and
+  prints the slowest statements and the plan of the slowest SQL.
+- `bench/python.py` times feed generation, reading a field and MLLP
+  unframing, in both Python jobs.
+- `wardround report --repeat`, with `--timing` giving the median,
+  fastest and slowest run.
+- `scripts/install.sh` split out of `ci.sh`, and `make bench` and
+  `make bench-python`.
+
 ## 1.0.0
 
 First release.
