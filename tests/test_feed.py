@@ -35,10 +35,10 @@ def test_control_ids_are_unique_except_for_resends():
 
 
 def test_each_visit_starts_with_registration_and_ends_with_one_discharge():
-    events = defaultdict(list)
+    events = defaultdict(set)  # a set, so a resend counts once
     for o in small().messages():
         if o.source == "REG":
-            events[hl7.fields_of(o.raw, "PV1")[19]].append(
+            events[hl7.fields_of(o.raw, "PV1")[19]].add(
                 (event_time(o.raw), hl7.fields_of(o.raw, "EVN")[1])
             )
     for visit in events.values():
