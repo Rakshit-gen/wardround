@@ -110,9 +110,14 @@ create or replace package body lab as
     end if;
 
     begin
+      -- In the terms of clinical_events_current_uk, so it's always a
+      -- unique key lookup. Written as plain columns, the cursor was
+      -- parsed on an empty table and full scanned it ever after
+      -- (docs/rca.md).
       select * into l_cur
         from clinical_events
-       where order_id = p_order.order_id and event_cd = l_cd and valid_until is null
+       where case when valid_until is null and order_id is not null then order_id end = p_order.order_id
+         and case when valid_until is null and order_id is not null then event_cd end = l_cd
          for update;
       if l_cur.status = l_status
          and (l_cur.result_val = l_text or l_cur.result_val is null and l_text is null) then
