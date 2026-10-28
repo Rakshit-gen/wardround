@@ -149,10 +149,32 @@ Things the numbers show that come from how the data went in:
   `4WEST`, which wasn't mapped. A patient whose transfer failed never
   left the ED as far as the database knows.
 - The 13 LAB errors are results with a cholesterol code nobody mapped.
-  A message fails whole, so its order has no result, which is why
-  `lab_overdue` (in `build/reports.txt` from CI) lists 12 orders.
+  A message fails whole, so its order is left with no result.
+  `lab_overdue` (in `build/reports.txt` from CI) lists 12 orders with
+  no result past their target.
 - Stat lactate has a 45 minute target where the other stat tests have
   60, and it's the one the lab misses most.
 
 The rates behind these (how many are admitted, how long they stay) are
 round numbers picked for the generator, not taken from any hospital.
+
+## Measured
+
+From CI run 40688858961, on a GitHub-hosted runner with Oracle Database
+23ai Free in a container. One run, not an average.
+
+| | |
+|---|---|
+| Messages generated | 17,437 (6,505 CPOE, 7,154 LAB, 3,778 REG), 175 of them resends |
+| Sent over MLLP, one at a time, each committed before its ACK | 16.56 s, 1,053 messages/s, all AA |
+| Applied by `inbound.process` | 17,235 in 15.03 s, 1,147 messages/s |
+| Ended | 17,235 DONE, 27 ERROR (the unmapped codes), 0 HELD |
+| After `map` and `reprocess` | 0 in error |
+| Slowest report | `interface`, 0.040 s |
+| utPLSQL | 67 tests, 0 failed |
+| Line coverage of the PL/SQL packages | 90.5% |
+| PL/SQL compiler warnings beyond the accepted list | 0 |
+| Python | 43 unit tests on 3.10 and 3.13; 19 against the database |
+
+The send rate is bound by a commit per message, which is the point:
+a message isn't acknowledged until it's safe.
