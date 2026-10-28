@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wardround"
+version = "0.1.0"
+description = "Synthetic HL7 feeds, an MLLP listener and hospital reports for the wardround schema"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = ["oracledb>=2.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[project.scripts]
+wardround = "wardround.cli:main"
+
+[tool.setuptools]
+packages = ["wardround"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["db: needs a wardround database (set WARDROUND_DSN)"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
