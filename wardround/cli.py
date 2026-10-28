@@ -1,4 +1,4 @@
-"""wardround generate | send | listen | process | report"""
+"""wardround generate | send | listen | process | map | reprocess | report"""
 
 import argparse
 import sys
@@ -71,6 +71,20 @@ def process(args) -> None:
           + ", ".join(f"{n} {s}" for s, n in db.statuses(conn).items()))
 
 
+def map_code(args) -> None:
+    from wardround import db
+
+    db.map_alias(db.connect(), args.code_set, args.source, args.alias, args.meaning, args.display)
+    print(f"{args.source} {args.alias} maps to {args.meaning} in code set {args.code_set}")
+
+
+def reprocess(args) -> None:
+    from wardround import db
+
+    before, after = db.reprocess_errors(db.connect())
+    print(f"reprocessed {before} messages in error; {after} still in error")
+
+
 def report(args) -> None:
     from wardround import db
 
@@ -125,6 +139,17 @@ def main(argv=None) -> None:
     pr = sub.add_parser("process", help="apply the messages waiting in the database")
     pr.add_argument("--batch", type=int, default=5000)
     pr.set_defaults(func=process)
+
+    m = sub.add_parser("map", help="map a code a feed sends to a code value")
+    m.add_argument("code_set", type=int, help="e.g. 72 for result codes, 220 for units")
+    m.add_argument("source", help="the feed: REG, CPOE or LAB")
+    m.add_argument("alias", help="the code the feed sends")
+    m.add_argument("meaning", help="the code value's meaning, added if it's new")
+    m.add_argument("--display")
+    m.set_defaults(func=map_code)
+
+    rp = sub.add_parser("reprocess", help="apply the messages in error again")
+    rp.set_defaults(func=reprocess)
 
     r = sub.add_parser("report", help="run the reports for a period")
     r.add_argument("--from", dest="from_day", required=True, help="YYYY-MM-DD")

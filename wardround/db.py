@@ -44,3 +44,23 @@ def statuses(conn: oracledb.Connection) -> dict[str, int]:
     with conn.cursor() as cur:
         cur.execute("select status, count(*) from hl7_messages group by status order by status")
         return dict(cur.fetchall())
+
+
+def map_alias(conn: oracledb.Connection, code_set: int, source: str, alias: str,
+              meaning: str, display: str | None = None) -> None:
+    with conn.cursor() as cur:
+        cur.callproc("codes.map_alias", [code_set, source, alias, meaning, display])
+    conn.commit()
+
+
+def reprocess_errors(conn: oracledb.Connection) -> tuple[int, int]:
+    """Puts every message in error back in the queue and applies the
+    queue. Returns how many were in error before, and after."""
+    with conn.cursor() as cur:
+        cur.execute("select msg_id from hl7_messages where status = 'ERROR' order by msg_id")
+        ids = [r[0] for r in cur.fetchall()]
+        for msg_id in ids:
+            cur.callproc("inbound.reprocess", [msg_id])
+        conn.commit()
+    process(conn)
+    return len(ids), statuses(conn).get("ERROR", 0)
