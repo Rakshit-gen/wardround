@@ -224,5 +224,13 @@ create or replace package body test_adt as
     ut.expect(test_fixture.status_of('K1')).to_equal('ERROR');
     ut.expect(test_fixture.error_of('K1')).to_equal('visit F2 is cancelled');
   end transfer_cancelled_visit;
+
+  procedure move_before_arrival is
+  begin
+    test_fixture.send(test_fixture.adt('A04', 'F1', hm('08:00')));
+    test_fixture.send(test_fixture.adt('A02', 'F1', hm('07:00'), '4W', p_control => 'K2'));
+    ut.expect(test_fixture.status_of('K2')).to_equal('ERROR');
+    ut.expect(test_fixture.error_of('K2')).to_equal('move at 2026-03-02 07:00 is before arrival');
+  end move_before_arrival;
 end test_adt;
 /

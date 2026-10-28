@@ -57,5 +57,8 @@ create or replace package test_adt as
 
   --%test(A transfer for a cancelled visit is an error)
   procedure transfer_cancelled_visit;
+
+  --%test(A transfer before the patient arrived is an error)
+  procedure move_before_arrival;
 end test_adt;
 /
