@@ -155,3 +155,21 @@ late, a message sent twice, and a unit (`4WEST`) and a result code
 two ending as ERROR and then cleared with `wardround map` and
 `wardround reprocess`. `--clean` sends the same patients with none of
 the defects.
+
+## Left out on purpose
+
+- **Merges.** ADT A40 (merge two patient records) and A44 (move a visit
+  to another patient) aren't handled. They need a rule for every table
+  that points at a patient, and the feed doesn't send them.
+- **Pending discharges, leaves of absence, bed holds** (A16, A21, A22
+  and the rest). The census counts where patients are, which these
+  don't change.
+- **Microbiology and text reports.** Only numeric and short text lab
+  results are stored; cultures, susceptibilities and narrative reports
+  need their own tables.
+- **Time zones.** The feeds send local time and HL7 offsets are
+  dropped. A hospital that sends UTC would need them kept.
+- **Real codes.** The code sets and their numbers are made up for this
+  repo. A real system would load its own and map each feed's codes to
+  them, which is what `code_value_aliases` is for.
+- **Real data.** Everything here is synthetic.
