@@ -45,3 +45,40 @@ LAB (ORU)  ─┘                                                     │
 - Every code a feed sends is mapped through `code_value_aliases` to a
   code value; an unmapped one fails the message rather than being
   guessed.
+
+## Running it
+
+Needs an Oracle database (19c or later; CI uses 23ai Free) and Python
+3.10 or later.
+
+```
+docker run -d --name oracledb -p 1521:1521 -e ORACLE_PASSWORD=wardround \
+  -e APP_USER=wardround -e APP_USER_PASSWORD=wardround gvenzl/oracle-free:23
+RUNTIME=docker ./scripts/ci.sh        # installs utPLSQL and wardround, runs the tests
+
+pip install -e ".[dev]"
+export WARDROUND_DSN=localhost/FREEPDB1
+wardround generate --out build/feed.hl7          # 45 days from 15 Feb 2026
+wardround listen &                               # MLLP on port 2575
+wardround send build/feed.hl7
+wardround process
+wardround report --from 2026-03-01 --to 2026-04-01
+```
+
+`scripts/pipeline.sh` does the last five steps and then fixes the
+feed's unmapped codes:
+
+```
+wardround map 72 LAB 2093-3 CHOL --display Cholesterol
+wardround map 220 REG 4WEST 4W
+wardround reprocess
+```
+
+The same reports run from SQL*Plus:
+
+```
+sqlplus wardround/wardround@//localhost/FREEPDB1 @reports/run.sql 2026-03-01 2026-04-01
+```
+
+`wardround report --format html --out reports.html` writes them as one
+page, and `--format csv` as CSV.
