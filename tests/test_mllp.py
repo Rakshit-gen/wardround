@@ -1,5 +1,7 @@
 import threading
 
+import pytest
+
 from wardround import mllp
 
 
@@ -54,11 +56,8 @@ def test_listener_sends_no_ack_for_a_message_it_could_not_store():
     try:
         with mllp.Sender("127.0.0.1", srv.server_address[1]) as sender:
             assert sender.send("ok") == "ACK ok"
-            try:
+            with pytest.raises(ConnectionError):
                 sender.send("bad")
-                raise AssertionError("expected the connection to close")
-            except ConnectionError:
-                pass
     finally:
         srv.shutdown()
         srv.server_close()
