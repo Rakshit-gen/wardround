@@ -175,6 +175,3 @@ From CI run 40688858961, on a GitHub-hosted runner with Oracle Database
 | Line coverage of the PL/SQL packages | 90.5% |
 | PL/SQL compiler warnings beyond the accepted list | 0 |
 | Python | 43 unit tests on 3.10 and 3.13; 19 against the database |
-
-The send rate is bound by a commit per message, which is the point:
-a message isn't acknowledged until it's safe.
