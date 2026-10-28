@@ -199,5 +199,13 @@ create or replace package body test_adt as
     ut.expect(test_fixture.visit('F1').arrive_dt).to_equal(hm('08:05'));
     ut.expect(test_fixture.locations('F1')).to_equal('ED 08:05-');
   end arrival_from_pv1_44;
+
+  procedure evn_6_first is
+  begin
+    ed_then_ward;
+    -- Keyed at 13:00 for a move that happened at 12:15.
+    test_fixture.send(test_fixture.adt('A02', 'F1', hm('13:00'), 'ICU', p_occurred => hm('12:15')));
+    ut.expect(test_fixture.locations('F1')).to_equal('ED 08:00-10:00, 4W 10:00-12:15, ICU 12:15-');
+  end evn_6_first;
 end test_adt;
 /

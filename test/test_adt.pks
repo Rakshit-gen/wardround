@@ -48,5 +48,8 @@ create or replace package test_adt as
 
   --%test(PV1-44 gives the arrival time when it's sent)
   procedure arrival_from_pv1_44;
+
+  --%test(EVN-6, when the event happened, wins over EVN-2)
+  procedure evn_6_first;
 end test_adt;
 /
