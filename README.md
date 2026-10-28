@@ -175,3 +175,37 @@ From CI run 40688858961, on a GitHub-hosted runner with Oracle Database
 | Line coverage of the PL/SQL packages | 90.5% |
 | PL/SQL compiler warnings beyond the accepted list | 0 |
 | Python | 43 unit tests on 3.10 and 3.13; 19 against the database |
+
+## Tests
+
+- **utPLSQL** (`test/`): the HL7 reader, every ADT event including
+  out-of-order and resent transfers and cancellations, orders and
+  versioned results, held and failed messages and reprocessing, code
+  mapping. Each test sends real HL7 through `inbound.receive` and
+  `inbound.process`, the path the feeds use.
+- **pytest** (`tests/`): the HL7 builder, MLLP framing and the
+  listener's behaviour when it can't store a message, the feed
+  generator, report rendering and the CLI, without a database.
+  `test_db.py` and `test_report_numbers.py` need one: the first loads a
+  feed over MLLP and runs every report, the second loads three patients
+  whose report numbers can be worked out by hand and checks them.
+- `sql/lint.sql` recompiles the packages with every warning on; CI fails
+  on any not on its short accepted list.
+
+## Layout
+
+```
+install.sql, uninstall.sql
+sql/schema/      tables and the current_results view
+sql/data/        code sets, units, tests and turnaround targets
+sql/packages/    hl7, codes, adt, lab, inbound, wr_errors
+reports/         one SELECT per report, and run.sql for SQL*Plus
+test/            utPLSQL suites
+wardround/       Python: feed, hl7, mllp, db, reports, cli
+tests/           pytest
+scripts/         ci.sh (database and utPLSQL), pipeline.sh (feed to reports)
+docs/            design, runbook, root cause analyses
+```
+
+What's left out on purpose (merges, leaves of absence, microbiology,
+time zones) is at the end of `docs/design.md`.
