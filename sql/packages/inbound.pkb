@@ -148,5 +148,13 @@ create or replace package body inbound as
     end if;
     codes.reset;
   end reprocess;
+
+  function purge(p_before date) return pls_integer is
+  begin
+    delete from hl7_messages
+     where status in ('DONE', 'IGNORED')
+       and processed_at < cast(p_before as timestamp);
+    return sql%rowcount;
+  end purge;
 end inbound;
 /

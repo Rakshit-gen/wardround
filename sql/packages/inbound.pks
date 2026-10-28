@@ -17,5 +17,11 @@ create or replace package inbound as
   -- Puts a message in error back in the queue, after the mapping or the
   -- data it needed has been fixed.
   procedure reprocess(p_msg_id number);
+
+  -- Deletes messages applied or ignored before p_before, which the
+  -- visits, orders and results no longer need. Messages held or in error
+  -- are kept however old, since someone still has to look at them.
+  -- Returns how many were deleted. Doesn't commit.
+  function purge(p_before date) return pls_integer;
 end inbound;
 /
