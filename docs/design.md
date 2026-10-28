@@ -118,3 +118,40 @@ Fields used:
 | ADT | EVN-2, EVN-6 event time; PID-3 MRN (the repetition with type MR), PID-5 name, PID-7 birth date, PID-8 sex; PV1-2 class, PV1-3 unit, room, bed; PV1-19 visit number; PV1-36 disposition; PV1-44 arrival, PV1-45 discharge; DG1-3 diagnosis, DG1-15 rank |
 | ORM | ORC-1 NW or CA, ORC-2 placer number, ORC-9 order time; OBR-4 test, OBR-27.6 priority |
 | ORU | OBR-2 placer number, OBR-7 collected, OBR-22 reported; OBX-3 code, OBX-5 value, OBX-6 units, OBX-7 range, OBX-8 flag, OBX-11 status, OBX-14 observed |
+
+## Reports
+
+Each report is one SELECT in `reports/` with `:from_day` and `:to_day`
+binds, and starts with a comment saying what it's for. The Python
+runner and `reports/run.sql` run the same files, so SQL*Plus and the
+CLI can't disagree. Definitions, in short:
+
+| Report | Counts |
+|---|---|
+| census | Patients in each unit at each midnight of the period: average, peak, and average over staffed beds. ED patients waiting for a bed count in the ED. |
+| length_of_stay | Inpatient stays ending in the period, from admission (not ED arrival) to discharge, by the unit left from. |
+| readmissions | Inpatient stays ending in the period followed by another inpatient admission within 30 days. Stays ending in death or transfer to another acute hospital aren't counted. |
+| ed_throughput | ED arrivals in the period: time in the ED, how many still there, and for admitted patients the boarding time from admission to leaving the ED. |
+| lab_turnaround | Orders whose first final result was reported in the period: minutes from order to result against the agreed target for the test and priority. |
+| lab_overdue | Orders placed in the period with no final result by its end although their target has passed. |
+| interface | Messages per feed and type by status. |
+| interface_errors | Reasons messages are held or in error, with values masked so the same problem counts once. |
+
+`tests/test_report_numbers.py` loads three patients small enough to work
+out by hand and checks every report's numbers for them.
+
+## The synthetic feed
+
+`wardround.feed` makes up a hospital: about 30 ED arrivals and 3 planned
+admissions a day, a share admitted (some through intensive care),
+morning bloods for inpatients, and some patients coming back within 30
+days. The rates are round numbers picked to give the reports something
+to show. The same seed gives the same messages.
+
+It also sends some messages wrong on purpose, as feeds do: results
+before their order, an order before the registration, a transfer sent
+late, a message sent twice, and a unit (`4WEST`) and a result code
+(`2093-3`, cholesterol) that aren't mapped. The CI pipeline shows those
+two ending as ERROR and then cleared with `wardround map` and
+`wardround reprocess`. `--clean` sends the same patients with none of
+the defects.
