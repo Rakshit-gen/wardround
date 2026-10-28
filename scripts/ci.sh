@@ -55,3 +55,39 @@ echo "== Installing wardround, removing it, and installing it again"
 sql /tmp/wardround "$app" @install.sql </dev/null
 sql /tmp/wardround "$app" @uninstall.sql </dev/null
 sql /tmp/wardround "$app" @install.sql </dev/null
+
+echo "== Compiler warnings"
+sql /tmp/wardround "$app" @sql/lint.sql </dev/null
+
+echo "== Installing the tests"
+sql /tmp/wardround/test "$app" @install.sql </dev/null
+
+echo "== Running the tests"
+sql /tmp/wardround "$app" <<SQL | tee "$work/tests.txt"
+set serveroutput on size unlimited
+set linesize 200
+exec ut.run('$APP_USER')
+exit
+SQL
+if ! grep -Eq '^[1-9][0-9]* tests, 0 failed, 0 errored' "$work/tests.txt"; then
+  echo "tests failed" >&2
+  exit 1
+fi
+
+echo "== Coverage of the wardround packages by the tests"
+mkdir -p build
+sql /tmp "$app" <<SQL > build/coverage.xml
+set pagesize 0 linesize 32767 long 100000000 longchunksize 32767 trimspool on feedback off heading off
+select *
+  from table(ut.run(a_path => '$APP_USER',
+                    a_reporter => ut_coverage_cobertura_reporter(),
+                    a_exclude_objects => ut_varchar2_list('$APP_USER.test_fixture')));
+exit
+SQL
+rate=$(grep -o 'line-rate="[0-9.]*"' build/coverage.xml | head -1 | grep -o '[0-9.]*' || true)
+if [ -z "$rate" ]; then
+  echo "no coverage report" >&2
+  head -40 build/coverage.xml >&2
+  exit 1
+fi
+awk -v r="$rate" 'BEGIN { printf "line coverage: %.1f%%\n", r * 100 }'
