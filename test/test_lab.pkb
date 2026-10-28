@@ -121,7 +121,7 @@ create or replace package body test_lab as
     test_fixture.send(test_fixture.oru('P1', 'F1', at('08:30'), at('11:40'), cbc('C', '72')));
     ut.expect(result_of('P1', 'WBC').status).to_equal('C');
     ut.expect(result_of('P1', 'WBC').result_num).to_equal(72);
-    ut.expect(versions('P1')).to_equal(3);
+    ut.expect(versions('P1')).to_equal(4); -- WBC and HGB, each final then corrected
     ut.expect(order_of('P1').verified_dt).to_equal(at('09:05'));
   end correction;
 
