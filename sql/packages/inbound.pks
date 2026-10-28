@@ -22,6 +22,6 @@ create or replace package inbound as
   -- visits, orders and results no longer need. Messages held or in error
   -- are kept however old, since someone still has to look at them.
   -- Returns how many were deleted. Doesn't commit.
-  function purge(p_before date) return pls_integer;
+  function purge_applied(p_before date) return pls_integer;
 end inbound;
 /

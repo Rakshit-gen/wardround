@@ -26,7 +26,7 @@ create or replace package test_inbound as
   --%throws(-20004)
   procedure reprocess_done;
 
-  --%test(purge deletes old applied messages and keeps errors)
+  --%test(purge_applied deletes old applied messages and keeps errors)
   procedure purge_keeps_errors;
 
   --%test(process applies at most p_max new messages)

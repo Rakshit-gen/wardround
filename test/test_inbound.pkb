@@ -108,8 +108,8 @@ create or replace package body test_inbound as
   begin
     test_fixture.send(test_fixture.adt('A04', 'F1', hm('08:00'), p_control => 'G1'));
     test_fixture.send(test_fixture.adt('A04', 'F2', hm('08:00'), '9Z', p_control => 'G2'));
-    ut.expect(inbound.purge(sysdate - 1)).to_equal(0);
-    l_n := inbound.purge(sysdate + 1);
+    ut.expect(inbound.purge_applied(sysdate - 1)).to_equal(0);
+    l_n := inbound.purge_applied(sysdate + 1);
     ut.expect(count_of('G1')).to_equal(0);
     ut.expect(count_of('G2')).to_equal(1);
     ut.expect(test_fixture.visit('F1').status).to_equal('ACTIVE');
