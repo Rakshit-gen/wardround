@@ -125,5 +125,11 @@ create or replace package body test_hl7 as
     ut.expect(hl7.val(l_ack, 'MSA', 2)).to_equal('C42');
     ut.expect(hl7.val(l_ack, 'MSA', 3)).to_equal('bad | text');
   end ack;
+
+  procedure dashed_date is
+    l_at date := hl7.ts('2026-03-02');
+  begin
+    null;
+  end dashed_date;
 end test_hl7;
 /

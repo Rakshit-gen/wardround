@@ -152,7 +152,7 @@ create or replace package body hl7 as
       return null;
     end if;
     if l_digits is null or mod(length(l_digits), 2) = 1
-       or l_rest is not null and substr(l_rest, 1, 1) not in ('.', '+', '-') then
+       or l_rest is not null and not regexp_like(l_rest, '^(\.[0-9]{1,4})?([+-][0-9]{4})?$') then
       raise_application_error(wr_errors.bad_field, 'not an HL7 date and time: "' || substr(p_value, 1, 40) || '"');
     end if;
     -- Missing parts default to the first month, day, hour and minute.

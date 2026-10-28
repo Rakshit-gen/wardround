@@ -42,5 +42,9 @@ create or replace package test_hl7 as
 
   --%test(An ACK goes back to the sender and quotes its control id)
   procedure ack;
+
+  --%test(A date written with dashes is refused, not read as a year and an offset)
+  --%throws(-20003)
+  procedure dashed_date;
 end test_hl7;
 /
