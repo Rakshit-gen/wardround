@@ -16,6 +16,7 @@ NAMES = [
     "readmissions",
     "ed_throughput",
     "lab_turnaround",
+    "lab_overdue",
     "interface",
     "interface_errors",
 ]

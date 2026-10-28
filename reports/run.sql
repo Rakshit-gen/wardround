@@ -37,6 +37,9 @@ prompt
 prompt lab_turnaround
 @@lab_turnaround.sql
 prompt
+prompt lab_overdue
+@@lab_overdue.sql
+prompt
 prompt interface
 @@interface.sql
 prompt
