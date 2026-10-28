@@ -35,6 +35,7 @@ wardround report --from 2026-02-15 --to 2026-04-01 --only interface_errors
 wardround map 72 LAB 2093-3 CHOL --display Cholesterol
 wardround map 220 REG 4WEST 4W
 wardround reprocess
+wardround status
 wardround report --from 2026-02-15 --to 2026-04-01 --only interface_errors
 
 echo "== The same reports from SQL*Plus"

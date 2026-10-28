@@ -1,4 +1,4 @@
-"""wardround generate | send | listen | process | map | reprocess | report"""
+"""wardround generate | send | listen | process | status | map | reprocess | report"""
 
 import argparse
 import sys
@@ -80,6 +80,16 @@ def process(args) -> None:
     print("messages by status: " + ", ".join(f"{n} {s}" for s, n in db.statuses(conn).items()))
 
 
+def status(args) -> None:
+    from wardround import db
+
+    counts = db.statuses(db.connect())
+    for name in ("NEW", "HELD", "ERROR", "DONE", "IGNORED"):
+        print(f"{name:<8}{counts.get(name, 0):>8}")
+    if counts.get("HELD") or counts.get("ERROR"):
+        print("see: wardround report --only interface_errors --from ... --to ...")
+
+
 def map_code(args) -> None:
     from wardround import db
 
@@ -149,6 +159,9 @@ def main(argv=None) -> None:
     pr = sub.add_parser("process", help="apply the messages waiting in the database")
     pr.add_argument("--batch", type=int, default=5000)
     pr.set_defaults(func=process)
+
+    st = sub.add_parser("status", help="how many messages are in each state")
+    st.set_defaults(func=status)
 
     m = sub.add_parser("map", help="map a code a feed sends to a code value")
     m.add_argument("code_set", type=int, help="e.g. 72 for result codes, 220 for units")
