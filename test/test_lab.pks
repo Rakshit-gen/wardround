@@ -31,6 +31,9 @@ create or replace package test_lab as
   --%test(A final result reprocessed after its correction doesn't replace it)
   procedure final_after_correction;
 
+  --%test(current_results shows only the latest version of each result)
+  procedure current_results_view;
+
   --%test(Results for an order that hasn't arrived are held until it does)
   procedure results_before_order;
 

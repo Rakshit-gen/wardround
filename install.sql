@@ -17,6 +17,7 @@ prompt Creating tables
 @@sql/schema/06_results.sql
 @@sql/schema/07_diagnoses.sql
 @@sql/schema/08_interface.sql
+@@sql/schema/09_views.sql
 
 prompt Compiling packages
 @@sql/packages/wr_errors.pks

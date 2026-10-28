@@ -7,7 +7,8 @@ begin
   for o in (select object_type, object_name
               from user_objects
              where object_type in ('VIEW', 'PACKAGE')
-               and object_name in ('WR_ERRORS', 'HL7', 'CODES', 'ADT', 'LAB', 'INBOUND')) loop
+               and object_name in ('WR_ERRORS', 'HL7', 'CODES', 'ADT', 'LAB', 'INBOUND',
+                                   'CURRENT_RESULTS')) loop
     execute immediate 'drop ' || o.object_type || ' ' || o.object_name;
   end loop;
   -- Children before parents.

@@ -146,6 +146,19 @@ create or replace package body test_lab as
     ut.expect(versions('P1')).to_equal(2);
   end final_after_correction;
 
+  procedure current_results_view is
+    l_rows  pls_integer;
+    l_wbc   current_results.result_val%type;
+  begin
+    test_fixture.send(test_fixture.orm('P1', 'F1', 'CBC', hm('08:15')));
+    test_fixture.send(test_fixture.oru('P1', 'F1', hm('08:30'), hm('08:50'), cbc('P', '6.9')));
+    test_fixture.send(test_fixture.oru('P1', 'F1', hm('08:30'), hm('09:05'), cbc('F', '7.2')));
+    select count(*) into l_rows from current_results where placer_no = 'P1';
+    select result_val into l_wbc from current_results where placer_no = 'P1' and result = 'WBC';
+    ut.expect(l_rows).to_equal(2);
+    ut.expect(l_wbc).to_equal('7.2');
+  end current_results_view;
+
   procedure results_before_order is
   begin
     test_fixture.send(test_fixture.oru('P1', 'F1', hm('08:30'), hm('09:05'), cbc, p_control => 'E1'));
