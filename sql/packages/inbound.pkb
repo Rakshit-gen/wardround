@@ -59,6 +59,7 @@ create or replace package body inbound as
     l_msg    hl7.t_message;
     l_type   varchar2(4000);
     l_event  varchar2(4000);
+    l_error  hl7_messages.error%type;
   begin
     select body into l_raw from hl7_messages where msg_id = p_msg_id for update;
     savepoint before_message;
@@ -85,18 +86,20 @@ create or replace package body inbound as
     return true;
   exception
     when wr_errors.e_waiting_for then
+      l_error := reason; -- SQL can't call a function private to the package
       rollback to before_message;
       update hl7_messages
-         set status = 'HELD', error = reason, attempts = attempts + 1, processed_at = systimestamp
+         set status = 'HELD', error = l_error, attempts = attempts + 1, processed_at = systimestamp
        where msg_id = p_msg_id;
       return false;
     -- Anything else, including a bug, stops this message and not the
     -- ones after it; the error is on the message for the interface
     -- report.
     when others then
+      l_error := reason; -- SQL can't call a function private to the package
       rollback to before_message;
       update hl7_messages
-         set status = 'ERROR', error = reason, attempts = attempts + 1, processed_at = systimestamp
+         set status = 'ERROR', error = l_error, attempts = attempts + 1, processed_at = systimestamp
        where msg_id = p_msg_id;
       return false;
   end apply_one;

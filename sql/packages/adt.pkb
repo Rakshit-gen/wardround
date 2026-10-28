@@ -150,8 +150,8 @@ create or replace package body adt as
     end;
 
     if l_cur.unit_cd = p_loc.unit_cd
-       and decode(l_cur.room, p_loc.room, 1, 0) = 1
-       and decode(l_cur.bed, p_loc.bed, 1, 0) = 1 then
+       and (l_cur.room = p_loc.room or l_cur.room is null and p_loc.room is null)
+       and (l_cur.bed = p_loc.bed or l_cur.bed is null and p_loc.bed is null) then
       return; -- already there: a resend
     elsif l_cur.beg_dt = p_at then
       -- The move that started this stretch, corrected.

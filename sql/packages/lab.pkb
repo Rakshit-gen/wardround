@@ -114,7 +114,8 @@ create or replace package body lab as
         from clinical_events
        where order_id = p_order.order_id and event_cd = l_cd and valid_until is null
          for update;
-      if l_cur.status = l_status and decode(l_cur.result_val, l_text, 1, 0) = 1 then
+      if l_cur.status = l_status
+         and (l_cur.result_val = l_text or l_cur.result_val is null and l_text is null) then
         return l_status <> 'P'; -- a resend
       elsif l_status = 'P' and l_cur.status in ('F', 'C') then
         return true; -- a preliminary result overtaken by the final one
