@@ -211,5 +211,21 @@ create or replace package body test_lab as
     ut.expect(versions('P1')).to_equal(0);
     ut.expect(order_of('P1').status).to_equal('ORDERED');
   end unmapped_result;
+
+  procedure two_orders_in_one_message is
+    l_msg varchar2(4000);
+  begin
+    test_fixture.send(test_fixture.orm('P1', 'F1', 'CBC', hm('08:15')));
+    test_fixture.send(test_fixture.orm('P2', 'F1', 'INR', hm('08:15')));
+    -- The second OBR and its OBX, after the first order's results.
+    l_msg := test_fixture.oru('P1', 'F1', hm('08:30'), hm('09:05'), cbc) || chr(13)
+          || 'OBR|2|P2|||||20260302083000|||||||||||||||20260302091000' || chr(13)
+          || test_fixture.obx(1, '6301-6', '1.1', null, '0.8-1.2', 'N');
+    test_fixture.send(l_msg);
+    ut.expect(order_of('P1').verified_dt).to_equal(hm('09:05'));
+    ut.expect(order_of('P2').verified_dt).to_equal(hm('09:10'));
+    ut.expect(result_of('P2', 'INR').result_num).to_equal(1.1);
+    ut.expect(versions('P1')).to_equal(2);
+  end two_orders_in_one_message;
 end test_lab;
 /

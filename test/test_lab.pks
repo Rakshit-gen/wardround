@@ -48,5 +48,8 @@ create or replace package test_lab as
 
   --%test(A result code with no alias is an error and nothing is applied)
   procedure unmapped_result;
+
+  --%test(One ORU can carry results for two orders)
+  procedure two_orders_in_one_message;
 end test_lab;
 /
