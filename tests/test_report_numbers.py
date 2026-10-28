@@ -6,9 +6,12 @@ in every census, so the census is compared before and after.
   A  ED 1 May 20:00, admitted 23:00 while still in the ED, to 4W 2 May
      02:00, home 3 May 10:00. Back on 10 May and admitted again: a
      readmission. A stat troponin ordered 20:30, resulted 21:20.
-  B  ED 2 May 09:00 to 13:00, home, not admitted.
+  B  ED 2 May 09:00 to 13:00, home, not admitted. A stat INR ordered
+     09:30 isn't resulted until 5 May, so it's overdue on 4 May.
   C  Admitted straight to 5E 1 May 08:00, died 2 May 08:00. A routine
      CBC ordered 09:00, resulted 13:30, past its four hours.
+  A routine BMP for A ordered 3 May 22:30 isn't due until after the
+  period, so it isn't overdue yet.
 """
 
 import os
@@ -57,6 +60,8 @@ def lab(fin, placer, test, loinc, ordered, reported, stat):
     return [order, result]
 
 
+B_INR = lab("N31B", "N31P3", "INR", "6301-6", t(2, 9, 30), t(5, 9), stat=True)
+
 SCENARIO = [
     adt("A01", "N31C", "N31MC", t(1, 8), "5E", "I"),
     *lab("N31C", "N31P2", "CBC", "6690-2", t(1, 9), t(1, 13, 30), stat=False),
@@ -66,8 +71,11 @@ SCENARIO = [
     adt("A02", "N31A1", "N31MA", t(2, 2), "4W"),
     adt("A03", "N31C", "N31MC", t(2, 8), "5E", disp="20"),
     adt("A04", "N31B", "N31MB", t(2, 9), "ED"),
+    B_INR[0],
     adt("A03", "N31B", "N31MB", t(2, 13), "ED", disp="01"),
     adt("A03", "N31A1", "N31MA", t(3, 10), "4W", disp="01"),
+    lab("N31A1", "N31P4", "BMP", "2951-2", t(3, 22, 30), t(4, 4), stat=False)[0],
+    B_INR[1],
     adt("A04", "N31A2", "N31MA", t(10, 8), "ED"),
     adt("A01", "N31A2", "N31MA", t(10, 9), "ED"),
 ]
@@ -143,3 +151,16 @@ def test_lab_turnaround_against_targets(conn):
     assert tat[("TROP", "STAT")]["within_target_pct"] == 100
     assert tat[("CBC", "ROUTINE")]["median_min"] == 270
     assert tat[("CBC", "ROUTINE")]["within_target_pct"] == 0
+
+
+def test_lab_overdue_as_of_the_end_of_the_period(conn):
+    columns, rows = reports.run(conn, "lab_overdue", FROM, TO)
+    assert [dict(zip(columns, r, strict=True)) for r in rows] == [
+        {
+            "test": "INR",
+            "priority": "STAT",
+            "orders": 1,
+            "most_min_over": 2250,  # 2 May 09:30 + 60 min to 4 May 00:00
+            "oldest_order": "N31P3",
+        }
+    ]
