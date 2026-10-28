@@ -7,7 +7,8 @@ create or replace package test_fixture as
   -- A segment from its fields by number, so f(19) is PV1-19 and so on.
   function seg(p_id varchar2, p_fields t_fields) return varchar2;
 
-  -- An ADT message from registration (REG). p_at is the event time.
+  -- An ADT message from registration (REG). p_at is the event time
+  -- (EVN-2); p_arrived goes in PV1-44 and p_occurred in EVN-6 when given.
   -- Control ids are made up unless given.
   function adt(
     p_event    varchar2,
@@ -20,7 +21,9 @@ create or replace package test_fixture as
     p_mrn      varchar2 default 'M1',
     p_disp     varchar2 default null,
     p_extra    varchar2 default null,
-    p_control  varchar2 default null
+    p_control  varchar2 default null,
+    p_arrived  date default null,
+    p_occurred date default null
   ) return varchar2;
 
   -- A new lab order (ORM^O01 NW) from order entry (CPOE), or with

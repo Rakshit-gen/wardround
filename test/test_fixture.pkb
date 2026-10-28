@@ -43,7 +43,9 @@ create or replace package body test_fixture as
     p_mrn      varchar2 default 'M1',
     p_disp     varchar2 default null,
     p_extra    varchar2 default null,
-    p_control  varchar2 default null
+    p_control  varchar2 default null,
+    p_arrived  date default null,
+    p_occurred date default null
   ) return varchar2 is
     l_evn t_fields;
     l_pid t_fields;
@@ -51,6 +53,7 @@ create or replace package body test_fixture as
   begin
     l_evn(1) := p_event;
     l_evn(2) := hl7_time(p_at);
+    l_evn(6) := case when p_occurred is not null then hl7_time(p_occurred) end;
     l_pid(1) := '1';
     l_pid(3) := p_mrn || '^^^HOSP^MR';
     l_pid(5) := 'DOE^JANE';
@@ -61,6 +64,7 @@ create or replace package body test_fixture as
     l_pv1(3) := p_unit || '^' || p_room || '^' || p_bed;
     l_pv1(19) := p_fin;
     l_pv1(36) := p_disp;
+    l_pv1(44) := case when p_arrived is not null then hl7_time(p_arrived) end;
     return msh('REG', 'ADT^' || p_event || '^ADT_A01', p_at, p_control) || chr(13)
         || seg('EVN', l_evn) || chr(13)
         || seg('PID', l_pid) || chr(13)
