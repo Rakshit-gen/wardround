@@ -44,3 +44,20 @@ def test_report_renders_every_format_and_names_a_failed_report(monkeypatch, tmp_
         page = out.read_text()
         assert "census" in page and "4W" in page
     assert "report readmissions failed: ORA-00942" in capsys.readouterr().err
+
+
+def test_status_prints_every_state_and_points_at_errors(monkeypatch, capsys):
+    from wardround import db
+
+    monkeypatch.setattr(db, "connect", lambda: None)
+    monkeypatch.setattr(db, "statuses", lambda conn: {"DONE": 10, "ERROR": 2})
+    cli.main(["status"])
+    out = capsys.readouterr().out.splitlines()
+    assert out[:5] == [
+        "NEW            0",
+        "HELD           0",
+        "ERROR          2",
+        "DONE          10",
+        "IGNORED        0",
+    ]
+    assert "interface_errors" in out[5]
