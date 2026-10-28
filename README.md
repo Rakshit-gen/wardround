@@ -185,7 +185,7 @@ From CI run 40688858961, on a GitHub-hosted runner with Oracle Database
 | utPLSQL | 67 tests, 0 failed |
 | Line coverage of the PL/SQL packages | 90.5% |
 | PL/SQL compiler warnings beyond the accepted list | 0 |
-| Python | 43 unit tests on 3.10 and 3.13; 19 against the database |
+| Python | 44 unit tests on 3.10 and 3.13; 19 against the database (run 40689427855, after one more test was added) |
 
 ## Tests
 
