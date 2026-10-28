@@ -1,9 +1,9 @@
 # Root cause analyses
 
-Problems found while building wardround, written up the way they were
-worked out. Run ids are GitHub Actions runs of this repository; the
-error text is copied from their logs. Where a problem was found by
-reading the code rather than in CI, the write-up says so.
+Problems found while building and benchmarking wardround, written up
+the way they were worked out. Run ids are GitHub Actions runs of this
+repository; the error text is copied from their logs. Where a problem
+was found by reading the code rather than in CI, the write-up says so.
 
 ## 1. The ED report failed with ORA-00934
 
@@ -154,3 +154,62 @@ every visit on 1 January without an error.
 raises bad_field, which `inbound.receive` turns into a null event time
 and `adt` into an error on the message. The test `dashed_date` checks
 it. Run 40688858961 passed all 67 tests.
+
+## 6. Three times the feed applied at half the rate
+
+**Symptom.** The bench workflow runs the whole path at one, three and
+nine times the default feed, each on a fresh schema. In three runs
+(40692176310, 40693357135, 40693357888) the middle size applied at
+835, 718 and 894 messages/s, against 1,161 to 1,289 at the default
+size and 1,749 to 2,643 at nine times. Three runs agreeing ruled out
+a noisy runner.
+
+**Finding the statement.** The bench was changed to flush the shared
+pool before each size and print the slowest statements after applying
+(commit 03b4774). Run 40694790021:
+
+| size | executions | seconds | per execution |
+|---|---:|---:|---:|
+| default | 21,780 | 5.30 | 0.24 ms |
+| three times | 66,406 | 48.23 | 0.73 ms |
+
+for `select * from clinical_events where order_id = :b2 and event_cd =
+:b1 and valid_until is null for update`, the lookup of a result's
+current version in `lab`. At nine times it wasn't among the six
+slowest. Its cost per execution grew with the table.
+
+**What the plan says.** Printing the plan too (commit bc81102), run
+40696401246:
+
+```
+|*  3 |    TABLE ACCESS FULL| CLINICAL_EVENTS |     1 |   250 |     3 (0)|
+   3 - filter(("VALID_UNTIL" IS NULL AND "ORDER_ID"=:B2 AND "EVENT_CD"=:B1))
+   - dynamic statistics used: dynamic sampling (level=2)
+```
+
+**Root cause.** The cursor was parsed on the first result, when
+`clinical_events` was empty and a full scan cost 3. It kept that plan
+while the table grew to 66,000 rows, so every result read the whole
+table. `clinical_events_order_ix` would have found the few rows for
+the order, and `clinical_events_current_uk` the one row, but the
+optimizer had no reason to think either was cheaper than scanning
+an empty table.
+
+**Fix** (commit fa96713). The query is written in the terms of
+`clinical_events_current_uk`, the `case` expressions it's built on, so
+it's an equality on every column of a unique index and Oracle uses it
+whatever the statistics say. It finds the same row: the index has an
+entry only for the current version of a result with an order.
+
+**Result.** Run 40696939963, three times the feed: 52,290 messages
+applied in 14.37 s, 3,640 messages/s, where run 40696401246 took
+74.97 s. The 67 utPLSQL tests pass (run 40696940150).
+
+**Not explained.** Why the nine times size didn't suffer the same way
+in the earlier runs. Something made Oracle parse the statement again
+partway through, most likely, but nothing printed shows what. With
+the fix it doesn't matter, so I left it.
+
+**Prevention.** Every bench size starts with an empty table and a
+flushed shared pool, the way a new install does, and prints its
+slowest statements and the plan of the slowest SQL.
