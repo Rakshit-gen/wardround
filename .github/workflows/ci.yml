@@ -20,6 +20,8 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: pytest -q
+      - name: Benchmark the Python side
+        run: python bench/python.py 5
 
   oracle:
     runs-on: ubuntu-latest
