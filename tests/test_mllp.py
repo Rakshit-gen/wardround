@@ -41,3 +41,24 @@ def test_sender_and_server_round_trip():
         srv.shutdown()
         srv.server_close()
     assert received == ["m1", "m2"]
+
+
+def test_listener_sends_no_ack_for_a_message_it_could_not_store():
+    def receive(message):
+        if message == "bad":
+            raise RuntimeError("database down")
+        return "ACK " + message
+
+    srv = mllp.server("127.0.0.1", 0, receive)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        with mllp.Sender("127.0.0.1", srv.server_address[1]) as sender:
+            assert sender.send("ok") == "ACK ok"
+            try:
+                sender.send("bad")
+                raise AssertionError("expected the connection to close")
+            except ConnectionError:
+                pass
+    finally:
+        srv.shutdown()
+        srv.server_close()

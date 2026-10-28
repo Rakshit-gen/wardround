@@ -2,6 +2,7 @@
 
 import socket
 import socketserver
+import sys
 from collections.abc import Callable, Iterator
 
 START = b"\x0b"
@@ -67,7 +68,15 @@ def server(host: str, port: int, receive: Callable[[str], str]) -> socketserver.
     class Handler(socketserver.BaseRequestHandler):
         def handle(self):
             for message in frames(_reads(self.request)):
-                self.request.sendall(frame(receive(message)))
+                try:
+                    ack = receive(message)
+                except Exception as e:
+                    # Not stored, so no ACK: closing the connection makes
+                    # the feed send it again, which is safe since a
+                    # message stored twice is stored once.
+                    print(f"closing the connection, message not stored: {e}", file=sys.stderr)
+                    return
+                self.request.sendall(frame(ack))
 
     socketserver.TCPServer.allow_reuse_address = True
     return socketserver.TCPServer((host, port), Handler)
