@@ -74,6 +74,11 @@ then:
   puts it back in the queue.
 - **IGNORED**: a message type wardround doesn't use, such as SIU.
 
+Applied messages can be deleted once they're old with
+`inbound.purge_applied`; held and failed ones are kept until someone
+deals with them. `docs/runbook.md` covers that side: reading the
+reasons, `codes.map_alias` for a code nobody mapped, and reprocessing.
+
 ## Messages that arrive out of order
 
 Feeds don't send in event order: interfaces queue, retry and restart.
