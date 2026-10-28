@@ -23,8 +23,20 @@ def timed(runs, step):
     return secs, result
 
 
+def cpu() -> str:
+    """The CPU's model name on Linux, as CI runners vary; the machine elsewhere."""
+    try:
+        with open("/proc/cpuinfo") as f:
+            for line in f:
+                if line.startswith("model name"):
+                    return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    return platform.machine()
+
+
 def main(runs: int) -> None:
-    print(f"Python {platform.python_version()} on {platform.machine()}, {runs} runs of each step")
+    print(f"Python {platform.python_version()} on {cpu()}, {runs} runs of each step")
 
     secs, feed = timed(runs, lambda: [o.raw for o in Feed().messages()])
     print(f"generate {len(feed)} messages: {timing(secs)}")
