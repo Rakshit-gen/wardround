@@ -1,0 +1,46 @@
+name: bench
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Start Oracle Database Free
+        uses: gvenzl/setup-oracle-free@v1
+        with:
+          tag: 23
+          oracle-password: wardround
+          app-user: wardround
+          app-user-password: wardround
+
+      - name: Install wardround
+        run: ./scripts/install.sh
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - run: pip install -e .
+
+      - name: Benchmark at one, three and nine times the default feed
+        env:
+          SIZES: "30:3 90:9 270:27"
+        run: |
+          mkdir -p build
+          ./scripts/bench.sh 2>&1 | tee build/bench.txt
+
+      - name: Keep the output
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bench
+          path: |
+            build/bench.txt
+            build/listener.log
+          if-no-files-found: ignore
