@@ -39,7 +39,8 @@ def test_each_visit_starts_with_registration_and_ends_with_one_discharge():
     for o in small().messages():
         if o.source == "REG":
             events[hl7.fields_of(o.raw, "PV1")[19]].append(
-                (event_time(o.raw), hl7.fields_of(o.raw, "EVN")[1]))
+                (event_time(o.raw), hl7.fields_of(o.raw, "EVN")[1])
+            )
     for visit in events.values():
         kinds = [kind for _, kind in sorted(visit)]
         assert kinds[0] in ("A04", "A01")
@@ -56,8 +57,13 @@ def test_stat_orders_are_marked_in_obr_27():
 def test_defects_go_out_at_the_full_size():
     feed = Feed()
     feed.messages()
-    for kind in ("resend", "result_before_order", "order_before_registration",
-                 "late_transfer", "unmapped_result"):
+    for kind in (
+        "resend",
+        "result_before_order",
+        "order_before_registration",
+        "late_transfer",
+        "unmapped_result",
+    ):
         assert feed.defects[kind] > 0, kind
 
 

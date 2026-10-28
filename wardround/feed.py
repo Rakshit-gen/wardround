@@ -23,29 +23,59 @@ from wardround import hl7
 WARDS = ["4W", "5E", "3N"]
 
 DISPOSITIONS = [  # UB-04 code, weight
-    ("01", 72), ("03", 10), ("62", 5), ("02", 3), ("20", 3), ("07", 2),
+    ("01", 72),
+    ("03", 10),
+    ("62", 5),
+    ("02", 3),
+    ("20", 3),
+    ("07", 2),
 ]
 
 DIAGNOSES = [
-    ("I50.9", "Heart failure"), ("J18.9", "Pneumonia"), ("N39.0", "Urinary tract infection"),
-    ("I21.4", "NSTEMI"), ("A41.9", "Sepsis"), ("J44.1", "COPD with exacerbation"),
-    ("K35.80", "Acute appendicitis"), ("I48.91", "Atrial fibrillation"),
+    ("I50.9", "Heart failure"),
+    ("J18.9", "Pneumonia"),
+    ("N39.0", "Urinary tract infection"),
+    ("I21.4", "NSTEMI"),
+    ("A41.9", "Sepsis"),
+    ("J44.1", "COPD with exacerbation"),
+    ("K35.80", "Acute appendicitis"),
+    ("I48.91", "Atrial fibrillation"),
 ]
 
-FAMILY = ["SMITH", "PATEL", "NGUYEN", "GARCIA", "KHAN", "OKAFOR", "MULLER", "SATO", "ROSSI",
-          "IYER", "SILVA", "COHEN", "BROWN", "KOWALSKI", "HASSAN", "LEE"]
+FAMILY = [
+    "SMITH",
+    "PATEL",
+    "NGUYEN",
+    "GARCIA",
+    "KHAN",
+    "OKAFOR",
+    "MULLER",
+    "SATO",
+    "ROSSI",
+    "IYER",
+    "SILVA",
+    "COHEN",
+    "BROWN",
+    "KOWALSKI",
+    "HASSAN",
+    "LEE",
+]
 GIVEN_F = ["ANA", "PRIYA", "MEI", "SARAH", "FATIMA", "GRACE", "LENA", "YUKI", "ROSA", "ZOE"]
 GIVEN_M = ["JAMES", "ARJUN", "MINH", "CARLOS", "OMAR", "DAVID", "LUKAS", "KENJI", "MARCO", "TOM"]
 
 # LOINC code, units, low, high, mean, spread, decimals
 RESULTS = {
-    "CBC": [("6690-2", "10*3/uL", 4.0, 11.0, 8.0, 3.0, 1),
-            ("718-7", "g/dL", 12.0, 16.0, 13.2, 1.8, 1),
-            ("777-3", "10*3/uL", 150, 400, 250, 80, 0)],
-    "BMP": [("2951-2", "mmol/L", 135, 145, 139, 4, 0),
-            ("2823-3", "mmol/L", 3.5, 5.1, 4.2, 0.5, 1),
-            ("2160-0", "mg/dL", 0.6, 1.2, 1.0, 0.4, 2),
-            ("2345-7", "mg/dL", 70, 140, 115, 35, 0)],
+    "CBC": [
+        ("6690-2", "10*3/uL", 4.0, 11.0, 8.0, 3.0, 1),
+        ("718-7", "g/dL", 12.0, 16.0, 13.2, 1.8, 1),
+        ("777-3", "10*3/uL", 150, 400, 250, 80, 0),
+    ],
+    "BMP": [
+        ("2951-2", "mmol/L", 135, 145, 139, 4, 0),
+        ("2823-3", "mmol/L", 3.5, 5.1, 4.2, 0.5, 1),
+        ("2160-0", "mg/dL", 0.6, 1.2, 1.0, 0.4, 2),
+        ("2345-7", "mg/dL", 70, 140, 115, 35, 0),
+    ],
     "TROP": [("10839-9", "ng/mL", 0.0, 0.04, 0.03, 0.08, 2)],
     "LACT": [("2524-7", "mmol/L", 0.5, 2.2, 1.6, 0.9, 1)],
     "INR": [("6301-6", "", 0.8, 1.2, 1.3, 0.5, 1)],
@@ -100,8 +130,14 @@ def _lognormal(rng: random.Random, median: float, spread: float) -> float:
 
 
 class Feed:
-    def __init__(self, seed: int = 1, start: datetime = datetime(2026, 2, 15),
-                 days: int = 45, ed_per_day: int = 30, direct_per_day: int = 3):
+    def __init__(
+        self,
+        seed: int = 1,
+        start: datetime = datetime(2026, 2, 15),
+        days: int = 45,
+        ed_per_day: int = 30,
+        direct_per_day: int = 3,
+    ):
         self.rng = random.Random(seed)
         self.start = start
         self.end = start + timedelta(days=days)
@@ -150,18 +186,30 @@ class Feed:
         return f"{source}{self.tag}{self._next(source):08d}"
 
     def _pid(self, p: Patient) -> str:
-        return hl7.segment("PID", {1: "1", 3: f"{p.mrn}^^^HOSP^MR",
-                                   5: f"{p.family}^{p.given}", 7: p.birth, 8: p.sex})
+        return hl7.segment(
+            "PID",
+            {1: "1", 3: f"{p.mrn}^^^HOSP^MR", 5: f"{p.family}^{p.given}", 7: p.birth, 8: p.sex},
+        )
 
-    def _adt(self, event: str, at: datetime, v: Visit, unit: str, room: str = "",
-             bed: str = "", disp: str = "", diagnosis: tuple[str, str] | None = None,
-             send_at: datetime | None = None) -> None:
+    def _adt(
+        self,
+        event: str,
+        at: datetime,
+        v: Visit,
+        unit: str,
+        room: str = "",
+        bed: str = "",
+        disp: str = "",
+        diagnosis: tuple[str, str] | None = None,
+        send_at: datetime | None = None,
+    ) -> None:
         segs = [
             hl7.msh("REG", f"ADT^{event}^ADT_A01", at, self._control("REG")),
             hl7.segment("EVN", {1: event, 2: hl7.ts(at)}),
             self._pid(v.patient),
-            hl7.segment("PV1", {1: "1", 2: v.patient_class, 3: f"{unit}^{room}^{bed}",
-                                19: v.fin, 36: disp}),
+            hl7.segment(
+                "PV1", {1: "1", 2: v.patient_class, 3: f"{unit}^{room}^{bed}", 19: v.fin, 36: disp}
+            ),
         ]
         if diagnosis:
             code, text = diagnosis
@@ -180,13 +228,31 @@ class Feed:
 
     def _obx(self, results, status: str) -> list[str]:
         return [
-            hl7.segment("OBX", {1: str(i), 2: "ST" if value.startswith("<") else "NM",
-                                3: f"{code}^^LN", 5: value, 6: units, 8: flag, 11: status})
+            hl7.segment(
+                "OBX",
+                {
+                    1: str(i),
+                    2: "ST" if value.startswith("<") else "NM",
+                    3: f"{code}^^LN",
+                    5: value,
+                    6: units,
+                    8: flag,
+                    11: status,
+                },
+            )
             for i, (code, value, units, flag) in enumerate(results, 1)
         ]
 
-    def _oru(self, v: Visit, placer: str, collected: datetime, reported: datetime,
-             results, status: str, send_at: datetime | None = None) -> None:
+    def _oru(
+        self,
+        v: Visit,
+        placer: str,
+        collected: datetime,
+        reported: datetime,
+        results,
+        status: str,
+        send_at: datetime | None = None,
+    ) -> None:
         segs = [
             hl7.msh("LAB", "ORU^R01^ORU_R01", reported, self._control("LAB")),
             self._pid(v.patient),
@@ -200,8 +266,9 @@ class Feed:
         """An order and its results. Stat orders are collected and run
         faster."""
         placer = f"P{self.tag}{self._next('placer'):08d}"
-        collected = ordered + timedelta(minutes=self.rng.uniform(5, 25) if stat
-                                        else self.rng.uniform(20, 120))
+        collected = ordered + timedelta(
+            minutes=self.rng.uniform(5, 25) if stat else self.rng.uniform(20, 120)
+        )
         tat = _lognormal(self.rng, 28 if stat else 95, 0.45)
         reported = collected + timedelta(minutes=tat)
 
@@ -215,20 +282,28 @@ class Feed:
             self.defects["result_before_order"] += 1
             order_sent = reported + timedelta(minutes=1)
         orc = hl7.segment("ORC", {1: "NW", 2: placer, 9: hl7.ts(ordered)})
-        obr = hl7.segment("OBR", {1: "1", 2: placer, 4: test,
-                                  27: "^^^^^" + ("S" if stat else "R")})
-        self._send("CPOE", ordered, hl7.message(
-            hl7.msh("CPOE", "ORM^O01^ORM_O01", ordered, self._control("CPOE")),
-            self._pid(v.patient), hl7.segment("PV1", {1: "1", 19: v.fin}), orc, obr,
-        ), order_sent)
+        obr = hl7.segment("OBR", {1: "1", 2: placer, 4: test, 27: "^^^^^" + ("S" if stat else "R")})
+        self._send(
+            "CPOE",
+            ordered,
+            hl7.message(
+                hl7.msh("CPOE", "ORM^O01^ORM_O01", ordered, self._control("CPOE")),
+                self._pid(v.patient),
+                hl7.segment("PV1", {1: "1", 19: v.fin}),
+                orc,
+                obr,
+            ),
+            order_sent,
+        )
 
         if test == "CBC" and self.rng.random() < RATES["preliminary"]:
             self._oru(v, placer, collected, collected + timedelta(minutes=tat * 0.6), results, "P")
         self._oru(v, placer, collected, reported, results, "F")
         if self.rng.random() < RATES["correction"]:
             fixed = [self._value(spec) for spec in RESULTS[test]]
-            self._oru(v, placer, collected, reported + timedelta(hours=self.rng.uniform(2, 6)),
-                      fixed, "C")
+            self._oru(
+                v, placer, collected, reported + timedelta(hours=self.rng.uniform(2, 6)), fixed, "C"
+            )
 
     # Visits
 
@@ -242,8 +317,9 @@ class Feed:
             send_at = at + timedelta(hours=self.rng.uniform(1, 3))
         self._adt("A02", at, v, unit, str(self.rng.randint(1, 40)), "A", send_at=send_at)
 
-    def _inpatient(self, v: Visit, admitted: datetime, bed_at: datetime,
-                   ward: str) -> datetime | None:
+    def _inpatient(
+        self, v: Visit, admitted: datetime, bed_at: datetime, ward: str
+    ) -> datetime | None:
         """The stay from getting a bed to discharge. Returns the discharge
         time if the patient went home or to care, so could come back."""
         stay = timedelta(days=_lognormal(self.rng, 3.2, 0.6))
@@ -272,8 +348,11 @@ class Feed:
         admitted patient who went home or to care, who could come back."""
         v = self._visit(patient, "E")
         tests = [("CBC", True), ("BMP", True)]
-        tests += [(t, True) for t, p in (("TROP", 0.4), ("LACT", 0.15), ("INR", 0.2))
-                  if self.rng.random() < p]
+        tests += [
+            (t, True)
+            for t, p in (("TROP", 0.4), ("LACT", 0.15), ("INR", 0.2))
+            if self.rng.random() < p
+        ]
         first_order = arrive + timedelta(minutes=self.rng.uniform(10, 45))
 
         registered_at = None

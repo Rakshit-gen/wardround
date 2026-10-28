@@ -40,8 +40,20 @@ def segment(seg_id: str, fields: dict[int, str]) -> str:
 
 def msh(sender: str, message_type: str, at: datetime, control_id: str) -> str:
     return FIELD.join(
-        ["MSH", "^~\\&", sender, "HOSP", "WARDROUND", "HOSP", ts(at), "", message_type,
-         control_id, "P", "2.5.1"]
+        [
+            "MSH",
+            "^~\\&",
+            sender,
+            "HOSP",
+            "WARDROUND",
+            "HOSP",
+            ts(at),
+            "",
+            message_type,
+            control_id,
+            "P",
+            "2.5.1",
+        ]
     )
 
 

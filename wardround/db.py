@@ -46,8 +46,14 @@ def statuses(conn: oracledb.Connection) -> dict[str, int]:
         return dict(cur.fetchall())
 
 
-def map_alias(conn: oracledb.Connection, code_set: int, source: str, alias: str,
-              meaning: str, display: str | None = None) -> None:
+def map_alias(
+    conn: oracledb.Connection,
+    code_set: int,
+    source: str,
+    alias: str,
+    meaning: str,
+    display: str | None = None,
+) -> None:
     with conn.cursor() as cur:
         cur.callproc("codes.map_alias", [code_set, source, alias, meaning, display])
     conn.commit()

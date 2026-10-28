@@ -57,13 +57,15 @@ def text(title: str, columns: list[str], rows: list[tuple]) -> str:
     cells = [columns] + [[_cell(v) for v in row] for row in rows]
     widths = [max(len(r[i]) for r in cells) for i in range(len(columns))]
     # A column is right-aligned if everything in it is a number.
-    numeric = [bool(rows) and all(v is None or isinstance(v, int | float)
-                                  for v in (r[i] for r in rows))
-               for i in range(len(columns))]
+    numeric = [
+        bool(rows) and all(v is None or isinstance(v, int | float) for v in (r[i] for r in rows))
+        for i in range(len(columns))
+    ]
 
     def line(row):
-        return "  ".join(c.rjust(w) if n else c.ljust(w)
-                         for c, w, n in zip(row, widths, numeric, strict=True)).rstrip()
+        return "  ".join(
+            c.rjust(w) if n else c.ljust(w) for c, w, n in zip(row, widths, numeric, strict=True)
+        ).rstrip()
 
     out = [title, line(columns), line(["-" * w for w in widths])]
     out += [line(r) for r in cells[1:]] or ["(no rows)"]
@@ -96,8 +98,15 @@ def to_html(title: str, sections: list[tuple[str, str, list[str], list[tuple]]])
         parts += [f"<th>{html.escape(c)}</th>" for c in columns]
         parts.append("</tr>")
         for row in rows:
-            parts.append("<tr>" + "".join(
-                f'<td class=n>{_cell(v)}</td>' if isinstance(v, int | float)
-                else f"<td>{html.escape(_cell(v))}</td>" for v in row) + "</tr>")
+            parts.append(
+                "<tr>"
+                + "".join(
+                    f"<td class=n>{_cell(v)}</td>"
+                    if isinstance(v, int | float)
+                    else f"<td>{html.escape(_cell(v))}</td>"
+                    for v in row
+                )
+                + "</tr>"
+            )
         parts.append("</table>")
     return "\n".join(parts) + "\n"

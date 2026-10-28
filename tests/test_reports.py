@@ -24,14 +24,7 @@ def test_unknown_report():
 
 def test_text_lines_up_columns_and_right_aligns_numbers():
     out = reports.text("LOS", ["unit", "days"], [("4W", 3.25), ("ICU", 10.0), ("ALL", None)])
-    assert out == (
-        "LOS\n"
-        "unit  days\n"
-        "----  ----\n"
-        "4W    3.25\n"
-        "ICU     10\n"
-        "ALL\n"
-    )
+    assert out == ("LOS\nunit  days\n----  ----\n4W    3.25\nICU     10\nALL\n")
 
 
 def test_text_with_no_rows():

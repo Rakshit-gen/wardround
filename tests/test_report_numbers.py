@@ -87,8 +87,9 @@ def loaded():
         assert hl7.ack_code(db.receive(conn, raw)) == "AA"
     db.process(conn)
     with conn.cursor() as cur:
-        cur.execute("select count(*) from hl7_messages where control_id like 'N31%' "
-                    "and status <> 'DONE'")
+        cur.execute(
+            "select count(*) from hl7_messages where control_id like 'N31%' and status <> 'DONE'"
+        )
         assert cur.fetchone()[0] == 0
     yield conn, census_before
     conn.close()

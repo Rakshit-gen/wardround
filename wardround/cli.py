@@ -18,17 +18,26 @@ def read_feed(path: Path) -> list[str]:
 
 
 def generate(args) -> None:
-    feed = Feed(seed=args.seed, start=datetime.fromisoformat(args.start), days=args.days,
-                ed_per_day=args.ed_per_day, direct_per_day=args.direct_per_day)
+    feed = Feed(
+        seed=args.seed,
+        start=datetime.fromisoformat(args.start),
+        days=args.days,
+        ed_per_day=args.ed_per_day,
+        direct_per_day=args.direct_per_day,
+    )
     messages = feed.messages()
     with open(args.out, "w", newline="") as f:
         for o in messages:
             f.write(o.raw + "\n")
     by_source = Counter(o.source for o in messages)
-    print(f"{len(messages)} messages to {args.out}: "
-          + ", ".join(f"{n} {s}" for s, n in sorted(by_source.items())))
-    print("sent wrong on purpose: "
-          + ", ".join(f"{n} {kind}" for kind, n in sorted(feed.defects.items())))
+    print(
+        f"{len(messages)} messages to {args.out}: "
+        + ", ".join(f"{n} {s}" for s, n in sorted(by_source.items()))
+    )
+    print(
+        "sent wrong on purpose: "
+        + ", ".join(f"{n} {kind}" for kind, n in sorted(feed.defects.items()))
+    )
 
 
 def send(args) -> None:
@@ -67,8 +76,7 @@ def process(args) -> None:
     applied = db.process(conn, args.batch)
     secs = time.perf_counter() - began
     print(f"applied {applied} messages in {secs:.2f} s, {applied / secs:.0f} messages/s")
-    print("messages by status: "
-          + ", ".join(f"{n} {s}" for s, n in db.statuses(conn).items()))
+    print("messages by status: " + ", ".join(f"{n} {s}" for s, n in db.statuses(conn).items()))
 
 
 def map_code(args) -> None:
