@@ -95,3 +95,26 @@ events, not on the order they arrived in.
 - **Dependencies** wait: results before their order, an order before
   its visit's registration, a transfer before the registration. All are
   HELD and applied when what they need comes.
+
+## Reading HL7
+
+`hl7.parse` splits a message into segments on CR, LF or CRLF, and reads
+the separators from MSH-1 and MSH-2 instead of assuming `|^~\&`. Fields
+are numbered the way the standard numbers them, which is the main thing
+to get right: PID-3 is the third field after `PID`, but in MSH the
+field separator is itself MSH-1, so MSH-3 is the second field after
+`MSH`. `hl7.get` takes field, component, repetition and subcomponent
+numbers, unescapes the value (`\F\` `\S\` `\T\` `\R\` `\E\` `\.br\`),
+and returns null for `""`, which HL7 uses to say a value was deleted.
+Python's `wardround.hl7` builds messages with the same numbering, and a
+database test checks a name escaped in Python comes out of the PL/SQL
+reader unchanged.
+
+Fields used:
+
+| Message | Fields |
+|---|---|
+| all | MSH-3 sender, MSH-7 time, MSH-9 type, MSH-10 control id |
+| ADT | EVN-2, EVN-6 event time; PID-3 MRN (the repetition with type MR), PID-5 name, PID-7 birth date, PID-8 sex; PV1-2 class, PV1-3 unit, room, bed; PV1-19 visit number; PV1-36 disposition; PV1-44 arrival, PV1-45 discharge; DG1-3 diagnosis, DG1-15 rank |
+| ORM | ORC-1 NW or CA, ORC-2 placer number, ORC-9 order time; OBR-4 test, OBR-27.6 priority |
+| ORU | OBR-2 placer number, OBR-7 collected, OBR-22 reported; OBX-3 code, OBX-5 value, OBX-6 units, OBX-7 range, OBX-8 flag, OBX-11 status, OBX-14 observed |
