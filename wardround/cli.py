@@ -77,7 +77,13 @@ def report(args) -> None:
     conn = db.connect()
     names = args.only or reports.NAMES
     title = f"wardround, {args.from_day} to {args.to_day}"
-    results = [(n, *reports.run(conn, n, args.from_day, args.to_day)) for n in names]
+    results, failed = [], []
+    for n in names:
+        try:
+            results.append((n, *reports.run(conn, n, args.from_day, args.to_day)))
+        except db.oracledb.DatabaseError as e:
+            print(f"report {n} failed: {e}", file=sys.stderr)
+            failed.append(n)
     if args.format == "html":
         out = reports.to_html(title, [(n, reports.requirement(n), c, r) for n, c, r in results])
     elif args.format == "csv":
@@ -88,6 +94,8 @@ def report(args) -> None:
         Path(args.out).write_text(out)
     else:
         sys.stdout.write(out)
+    if failed:
+        sys.exit(1)
 
 
 def main(argv=None) -> None:
