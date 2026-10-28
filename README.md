@@ -97,6 +97,7 @@ ED      30      31         6.1           10           20.4
 4W      28      31        10.2           18           36.3
 5E      24      31        16.5           23             69
 ICU     12      31         1.8            5           15.3
+
 length_of_stay
 unit  discharges  mean_days  median_days  p90_days
 ----  ----------  ---------  -----------  --------
@@ -143,15 +144,15 @@ REG   ERROR   REG code "?" isn't mapped in code set 220         3            636
 
 Things the numbers show that come from how the data went in:
 
-- Three inpatients left from the ED in the length of stay report. Their
-  transfer to a ward named the unit `4WEST`, which wasn't mapped, so as
-  far as the database knew they never left the ED. Those are the three
-  REG errors.
+- Three inpatients left from the ED in the length of stay report, and
+  there are three REG errors: transfers to a ward the feed called
+  `4WEST`, which wasn't mapped. A patient whose transfer failed never
+  left the ED as far as the database knows.
 - The 13 LAB errors are results with a cholesterol code nobody mapped.
-  Each failed whole, so those orders show in `lab_overdue` too.
-- Routine troponin and lactate have no agreed target, so they're not in
-  the turnaround table's percentages; stat lactate's 45 minutes is the
-  one the lab misses most.
+  A message fails whole, so its order has no result, which is why
+  `lab_overdue` (in `build/reports.txt` from CI) lists 12 orders.
+- Stat lactate has a 45 minute target where the other stat tests have
+  60, and it's the one the lab misses most.
 
 The rates behind these (how many are admitted, how long they stay) are
 round numbers picked for the generator, not taken from any hospital.
