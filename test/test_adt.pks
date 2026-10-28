@@ -45,5 +45,8 @@ create or replace package test_adt as
 
   --%test(A unit with no alias is an error on the message, naming the code)
   procedure unmapped_unit;
+
+  --%test(PV1-44 gives the arrival time when it's sent)
+  procedure arrival_from_pv1_44;
 end test_adt;
 /

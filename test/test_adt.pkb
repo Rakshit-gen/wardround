@@ -191,5 +191,13 @@ create or replace package body test_adt as
     ut.expect(test_fixture.error_of('U1')).to_equal('REG code "9Z" isn''t mapped in code set 220');
     ut.expect(test_fixture.locations('F1')).to_be_null();
   end unmapped_unit;
+
+  procedure arrival_from_pv1_44 is
+  begin
+    -- Registered at 08:30 for a patient who arrived at 08:05.
+    test_fixture.send(test_fixture.adt('A04', 'F1', hm('08:30'), p_arrived => hm('08:05')));
+    ut.expect(test_fixture.visit('F1').arrive_dt).to_equal(hm('08:05'));
+    ut.expect(test_fixture.locations('F1')).to_equal('ED 08:05-');
+  end arrival_from_pv1_44;
 end test_adt;
 /
