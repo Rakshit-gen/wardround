@@ -48,7 +48,8 @@ LAB (ORU)  ─┘                                                     │
 
 ## Running it
 
-Needs an Oracle database (19c or later; CI uses 23ai Free) and Python
+Needs an Oracle database (19c or later; CI uses Oracle Database Free
+from the image tagged 23, which is now 26ai, release 23.26) and Python
 3.10 or later.
 
 ```
@@ -172,7 +173,7 @@ round numbers picked for the generator, not taken from any hospital.
 ## Measured
 
 From CI run 40688858961, on a GitHub-hosted runner with Oracle Database
-23ai Free in a container. One run, not an average.
+Free in a container. One run, not an average.
 
 | | |
 |---|---|
