@@ -28,6 +28,9 @@ create or replace package test_lab as
   --%test(A preliminary result that arrives after the final one is ignored)
   procedure late_preliminary;
 
+  --%test(A final result reprocessed after its correction doesn't replace it)
+  procedure final_after_correction;
+
   --%test(Results for an order that hasn't arrived are held until it does)
   procedure results_before_order;
 

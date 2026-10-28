@@ -135,6 +135,17 @@ create or replace package body test_lab as
     ut.expect(result_of('P1', 'WBC').status).to_equal('F');
   end late_preliminary;
 
+  procedure final_after_correction is
+  begin
+    test_fixture.send(test_fixture.orm('P1', 'F1', 'CBC', hm('08:15')));
+    test_fixture.send(test_fixture.oru('P1', 'F1', hm('08:30'), hm('11:40'), cbc('C', '72')));
+    test_fixture.send(test_fixture.oru('P1', 'F1', hm('08:30'), hm('09:05'), cbc('F', '7.2'), p_control => 'L2'));
+    ut.expect(test_fixture.status_of('L2')).to_equal('DONE');
+    ut.expect(result_of('P1', 'WBC').status).to_equal('C');
+    ut.expect(result_of('P1', 'WBC').result_val).to_equal('72');
+    ut.expect(versions('P1')).to_equal(2);
+  end final_after_correction;
+
   procedure results_before_order is
   begin
     test_fixture.send(test_fixture.oru('P1', 'F1', hm('08:30'), hm('09:05'), cbc, p_control => 'E1'));

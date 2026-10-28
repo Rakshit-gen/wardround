@@ -15,7 +15,9 @@ create or replace package lab as
   -- A result for an order that hasn't arrived raises waiting_for, so it's
   -- held until the order comes. A new version of a result closes the
   -- previous one at the time it was reported; a preliminary result that
-  -- turns up after the final one is ignored. The order's verified time
+  -- turns up after the final one is ignored, and so is any result
+  -- reported before the version already stored, as happens when a message
+  -- in error is reprocessed after a correction came. The order's verified time
   -- is when its first final result was reported, which is what
   -- turnaround is measured to. Doesn't commit.
 

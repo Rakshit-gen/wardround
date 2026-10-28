@@ -119,6 +119,10 @@ create or replace package body lab as
         return l_status <> 'P'; -- a resend
       elsif l_status = 'P' and l_cur.status in ('F', 'C') then
         return true; -- a preliminary result overtaken by the final one
+      elsif p_reported < l_cur.valid_from then
+        -- Reported before the version we have, and arriving after it: a
+        -- message held or reprocessed late. What we have is newer.
+        return l_cur.status <> 'P';
       end if;
       l_from := greatest(p_reported, l_cur.valid_from);
       update clinical_events set valid_until = l_from where event_id = l_cur.event_id;
