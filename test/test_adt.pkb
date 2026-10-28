@@ -207,5 +207,13 @@ create or replace package body test_adt as
     test_fixture.send(test_fixture.adt('A02', 'F1', hm('13:00'), 'ICU', p_occurred => hm('12:15')));
     ut.expect(test_fixture.locations('F1')).to_equal('ED 08:00-10:00, 4W 10:00-12:15, ICU 12:15-');
   end evn_6_first;
+
+  procedure a06_changes_to_inpatient is
+  begin
+    test_fixture.send(test_fixture.adt('A04', 'F1', hm('08:00')));
+    test_fixture.send(test_fixture.adt('A06', 'F1', hm('09:40')));
+    ut.expect(codes.meaning(test_fixture.visit('F1').encntr_type_cd)).to_equal('INPATIENT');
+    ut.expect(test_fixture.visit('F1').inpatient_dt).to_equal(hm('09:40'));
+  end a06_changes_to_inpatient;
 end test_adt;
 /

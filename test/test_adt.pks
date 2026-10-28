@@ -51,5 +51,8 @@ create or replace package test_adt as
 
   --%test(EVN-6, when the event happened, wins over EVN-2)
   procedure evn_6_first;
+
+  --%test(A06 makes an emergency visit inpatient like A01)
+  procedure a06_changes_to_inpatient;
 end test_adt;
 /
