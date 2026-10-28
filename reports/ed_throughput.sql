@@ -25,13 +25,13 @@ with ed_visits as (
    group by e.encntr_id, e.arrive_dt, e.inpatient_dt
 ),
 timed as (
-  select case when inpatient_dt is not null then 'ADMITTED' else 'NOT_ADMITTED' end as outcome,
+  select case when inpatient_dt is not null then 'ADMITTED' else 'NOT_ADMITTED' end as kind,
          24 * (left_ed - arrive_dt) as ed_hours,
          case when inpatient_dt is not null then 24 * (left_ed - greatest(inpatient_dt, arrive_dt)) end as boarding_hours,
          case when left_ed is null then 1 else 0 end as still_in_ed
     from ed_visits
 )
-select case when grouping(outcome) = 1 then 'ALL' else outcome end as outcome,
+select case when grouping(kind) = 1 then 'ALL' else kind end as outcome,
        count(*) as visits,
        sum(still_in_ed) as still_in_ed,
        round(median(ed_hours), 1) as median_ed_hours,
@@ -39,5 +39,5 @@ select case when grouping(outcome) = 1 then 'ALL' else outcome end as outcome,
        round(median(boarding_hours), 1) as median_boarding_hours,
        count(case when boarding_hours > 4 then 1 end) as boarded_over_4h
   from timed
- group by rollup(outcome)
- order by grouping(outcome), outcome;
+ group by rollup(kind)
+ order by grouping(kind), kind;
