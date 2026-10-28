@@ -126,5 +126,16 @@ create or replace package body test_inbound as
     ut.expect(l_n).to_equal(2);
     ut.expect(test_fixture.status_of('Q3')).to_equal('NEW');
   end process_max;
+
+  procedure bad_time_still_stored is
+    l_ack varchar2(4000);
+    l_at  date;
+  begin
+    l_ack := inbound.receive(replace(test_fixture.adt('A04', 'F1', hm('08:00'), p_control => 'BT1'),
+                                     '|20260302080000||ADT', '|2026-03-02||ADT'));
+    select event_dt into l_at from hl7_messages where control_id = 'BT1';
+    ut.expect(ack_code(l_ack)).to_equal('AA');
+    ut.expect(l_at).to_be_null();
+  end bad_time_still_stored;
 end test_inbound;
 /

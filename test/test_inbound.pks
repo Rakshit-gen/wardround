@@ -31,5 +31,8 @@ create or replace package test_inbound as
 
   --%test(process applies at most p_max new messages)
   procedure process_max;
+
+  --%test(A message with an unreadable MSH-7 is stored, with no time)
+  procedure bad_time_still_stored;
 end test_inbound;
 /
