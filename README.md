@@ -83,6 +83,17 @@ sqlplus wardround/wardround@//localhost/FREEPDB1 @reports/run.sql 2026-03-01 202
 `wardround report --format html --out reports.html` writes them as one
 page, and `--format csv` as CSV.
 
+## With a real feed
+
+The generator stands in for three hospital systems. To take a real
+feed instead, point it at `wardround listen` (it speaks plain MLLP on
+port 2575) and map its codes once: every unit, visit type, disposition,
+test and result code it sends needs a row in `code_value_aliases` for
+its sending application (MSH-3). The first messages to fail tell you
+which are missing; `interface_errors` lists them, `wardround map` adds
+them, and `wardround reprocess` applies what failed. `docs/runbook.md`
+has the rest.
+
 ## Reports
 
 March 2026 from the generated feed, as CI run 40688858961 printed them
