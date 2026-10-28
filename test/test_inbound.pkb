@@ -137,5 +137,12 @@ create or replace package body test_inbound as
     ut.expect(ack_code(l_ack)).to_equal('AA');
     ut.expect(l_at).to_be_null();
   end bad_time_still_stored;
+
+  procedure lf_segments is
+  begin
+    test_fixture.send(replace(test_fixture.adt('A04', 'F1', hm('08:00'), p_control => 'LF1'), chr(13), chr(10)));
+    ut.expect(test_fixture.status_of('LF1')).to_equal('DONE');
+    ut.expect(test_fixture.locations('F1')).to_equal('ED 08:00-');
+  end lf_segments;
 end test_inbound;
 /

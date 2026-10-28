@@ -34,5 +34,8 @@ create or replace package test_inbound as
 
   --%test(A message with an unreadable MSH-7 is stored, with no time)
   procedure bad_time_still_stored;
+
+  --%test(A message with LF between segments is applied like one with CR)
+  procedure lf_segments;
 end test_inbound;
 /
