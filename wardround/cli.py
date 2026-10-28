@@ -45,7 +45,7 @@ def send(args) -> None:
     messages = read_feed(args.file)
     codes: Counter[str] = Counter()
     began = time.perf_counter()
-    with mllp.Sender(args.host, args.port) as sender:
+    with mllp.Sender(args.host, args.port, retries=args.retries) as sender:
         for raw in messages:
             codes[hl7.ack_code(sender.send(raw)) or "none"] += 1
     secs = time.perf_counter() - began
@@ -152,6 +152,7 @@ def main(argv=None) -> None:
     s.add_argument("file", type=Path)
     s.add_argument("--host", default="127.0.0.1")
     s.add_argument("--port", type=int, default=2575)
+    s.add_argument("--retries", type=int, default=3, help="times to reconnect and resend")
     s.set_defaults(func=send)
 
     li = sub.add_parser("listen", help="take messages over MLLP into the database")

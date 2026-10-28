@@ -3,6 +3,7 @@
 import socket
 import socketserver
 import sys
+import time
 from collections.abc import Callable, Iterator
 
 START = b"\x0b"
@@ -36,18 +37,45 @@ def _reads(sock: socket.socket) -> Iterator[bytes]:
 
 
 class Sender:
-    """Sends messages one at a time and waits for each ACK, as feeds do."""
+    """Sends messages one at a time and waits for each ACK, as feeds do.
 
-    def __init__(self, host: str, port: int, timeout: float = 30.0):
-        self.sock = socket.create_connection((host, port), timeout=timeout)
+    If the connection drops before the ACK comes, it connects again and
+    sends the same message, up to retries times. Sending a message twice
+    is safe: the listener stores a resend once and gives the same ACK."""
+
+    def __init__(
+        self, host: str, port: int, timeout: float = 30.0, retries: int = 0, wait: float = 1.0
+    ):
+        self.address = (host, port)
+        self.timeout = timeout
+        self.retries = retries
+        self.wait = wait
+        self.reconnects = 0
+        self._connect()
+
+    def _connect(self) -> None:
+        self.sock = socket.create_connection(self.address, timeout=self.timeout)
         self._acks = frames(_reads(self.sock))
 
-    def send(self, message: str) -> str:
+    def _send_once(self, message: str) -> str:
         self.sock.sendall(frame(message))
         try:
             return next(self._acks)
         except StopIteration:
             raise ConnectionError("the listener closed the connection") from None
+
+    def send(self, message: str) -> str:
+        for attempt in range(self.retries + 1):
+            try:
+                return self._send_once(message)
+            except OSError:
+                if attempt == self.retries:
+                    raise
+                self.sock.close()
+                time.sleep(self.wait)
+                self._connect()
+                self.reconnects += 1
+        raise AssertionError("unreachable")
 
     def close(self) -> None:
         self.sock.close()
