@@ -11,6 +11,10 @@ license = "MIT"
 requires-python = ">=3.10"
 dependencies = ["oracledb>=2.0"]
 
+[project.urls]
+Source = "https://github.com/Rakshit-gen/wardround"
+Changelog = "https://github.com/Rakshit-gen/wardround/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.5"]
 
