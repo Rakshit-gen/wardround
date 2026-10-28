@@ -113,7 +113,10 @@ def report(args) -> None:
     results, failed = [], []
     for n in names:
         try:
+            began = time.perf_counter()
             results.append((n, *reports.run(conn, n, args.from_day, args.to_day)))
+            if args.timing:
+                print(f"{n}: {time.perf_counter() - began:.3f} s", file=sys.stderr)
         except db.oracledb.DatabaseError as e:
             print(f"report {n} failed: {e}", file=sys.stderr)
             failed.append(n)
@@ -180,6 +183,7 @@ def main(argv=None) -> None:
     r.add_argument("--only", action="append", choices=reports.NAMES)
     r.add_argument("--format", choices=["text", "csv", "html"], default="text")
     r.add_argument("--out")
+    r.add_argument("--timing", action="store_true", help="print how long each report took")
     r.set_defaults(func=report)
 
     args = p.parse_args(argv)

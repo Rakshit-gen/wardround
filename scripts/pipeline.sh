@@ -27,7 +27,7 @@ echo "== Applying it"
 wardround process
 
 echo "== Reports for March 2026"
-wardround report --from 2026-03-01 --to 2026-04-01 | tee build/reports.txt
+wardround report --from 2026-03-01 --to 2026-04-01 --timing | tee build/reports.txt
 wardround report --from 2026-03-01 --to 2026-04-01 --format html --out build/reports.html
 
 echo "== Mapping the codes the feed sent that nobody had mapped, and reprocessing"
