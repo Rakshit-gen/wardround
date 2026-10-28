@@ -1,9 +1,9 @@
 create or replace package body test_inbound as
 
-  function at(p_hhmi varchar2) return date is
+  function hm(p_hhmi varchar2) return date is
   begin
     return to_date('2026-03-02 ' || p_hhmi, 'YYYY-MM-DD HH24:MI');
-  end at;
+  end hm;
 
   function ack_code(p_ack varchar2) return varchar2 is
   begin
@@ -18,7 +18,7 @@ create or replace package body test_inbound as
   end count_of;
 
   procedure accepted is
-    l_ack  hl7.t_message := hl7.parse(inbound.receive(test_fixture.adt('A04', 'F1', at('08:00'), p_control => 'A1')));
+    l_ack  hl7.t_message := hl7.parse(inbound.receive(test_fixture.adt('A04', 'F1', hm('08:00'), p_control => 'A1')));
     l_msg  hl7_messages%rowtype;
   begin
     select * into l_msg from hl7_messages where control_id = 'A1';
@@ -28,12 +28,12 @@ create or replace package body test_inbound as
     ut.expect(l_msg.status).to_equal('NEW');
     ut.expect(l_msg.sending_app).to_equal('REG');
     ut.expect(l_msg.message_type).to_equal('ADT^A04');
-    ut.expect(l_msg.event_dt).to_equal(at('08:00'));
+    ut.expect(l_msg.event_dt).to_equal(hm('08:00'));
   end accepted;
 
   procedure duplicate is
-    l_first   varchar2(4000) := inbound.receive(test_fixture.adt('A04', 'F1', at('08:00'), p_control => 'A1'));
-    l_second  varchar2(4000) := inbound.receive(test_fixture.adt('A04', 'F1', at('08:00'), p_control => 'A1'));
+    l_first   varchar2(4000) := inbound.receive(test_fixture.adt('A04', 'F1', hm('08:00'), p_control => 'A1'));
+    l_second  varchar2(4000) := inbound.receive(test_fixture.adt('A04', 'F1', hm('08:00'), p_control => 'A1'));
   begin
     ut.expect(count_of('A1')).to_equal(1);
     ut.expect(hl7.val(hl7.parse(l_second), 'MSH', 10)).to_equal(hl7.val(hl7.parse(l_first), 'MSH', 10));
@@ -71,8 +71,8 @@ create or replace package body test_inbound as
     l_ack varchar2(4000);
     l_n   pls_integer;
   begin
-    l_ack := inbound.receive(test_fixture.adt('A04', 'F1', at('08:00'), '9Z', p_control => 'B1'));
-    l_ack := inbound.receive(test_fixture.adt('A04', 'F2', at('08:05'), p_control => 'B2'));
+    l_ack := inbound.receive(test_fixture.adt('A04', 'F1', hm('08:00'), '9Z', p_control => 'B1'));
+    l_ack := inbound.receive(test_fixture.adt('A04', 'F2', hm('08:05'), p_control => 'B2'));
     l_n := inbound.process;
     ut.expect(l_n).to_equal(1);
     ut.expect(test_fixture.status_of('B1')).to_equal('ERROR');
@@ -83,7 +83,7 @@ create or replace package body test_inbound as
     l_id   hl7_messages.msg_id%type;
     l_n    pls_integer;
   begin
-    test_fixture.send(test_fixture.adt('A04', 'F1', at('08:00'), 'EDX', p_control => 'M1'));
+    test_fixture.send(test_fixture.adt('A04', 'F1', hm('08:00'), 'EDX', p_control => 'M1'));
     ut.expect(test_fixture.status_of('M1')).to_equal('ERROR');
 
     insert into code_value_aliases (code_set, source, alias, code_value)
@@ -98,7 +98,7 @@ create or replace package body test_inbound as
   procedure reprocess_done is
     l_id hl7_messages.msg_id%type;
   begin
-    test_fixture.send(test_fixture.adt('A04', 'F1', at('08:00'), p_control => 'D1'));
+    test_fixture.send(test_fixture.adt('A04', 'F1', hm('08:00'), p_control => 'D1'));
     select msg_id into l_id from hl7_messages where control_id = 'D1';
     inbound.reprocess(l_id);
   end reprocess_done;
@@ -107,9 +107,9 @@ create or replace package body test_inbound as
     l_ack varchar2(4000);
     l_n   pls_integer;
   begin
-    l_ack := inbound.receive(test_fixture.adt('A04', 'F1', at('08:00'), p_control => 'Q1'));
-    l_ack := inbound.receive(test_fixture.adt('A04', 'F2', at('08:01'), p_control => 'Q2'));
-    l_ack := inbound.receive(test_fixture.adt('A04', 'F3', at('08:02'), p_control => 'Q3'));
+    l_ack := inbound.receive(test_fixture.adt('A04', 'F1', hm('08:00'), p_control => 'Q1'));
+    l_ack := inbound.receive(test_fixture.adt('A04', 'F2', hm('08:01'), p_control => 'Q2'));
+    l_ack := inbound.receive(test_fixture.adt('A04', 'F3', hm('08:02'), p_control => 'Q3'));
     l_n := inbound.process(2);
     ut.expect(l_n).to_equal(2);
     ut.expect(test_fixture.status_of('Q3')).to_equal('NEW');

@@ -149,15 +149,9 @@ create or replace package body test_fixture as
         || p_obx;
   end oru;
 
-  function send(p_raw varchar2) return varchar2 is
-    l_ack varchar2(4000) := inbound.receive(p_raw);
-    l_n   pls_integer := inbound.process;
-  begin
-    return l_ack;
-  end send;
-
   procedure send(p_raw varchar2) is
-    l_ack varchar2(4000) := send(p_raw);
+    l_ack  varchar2(4000) := inbound.receive(p_raw);
+    l_n    pls_integer := inbound.process;
   begin
     null;
   end send;

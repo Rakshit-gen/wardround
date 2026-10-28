@@ -41,7 +41,7 @@ create or replace package test_adt as
   procedure update_patient;
 
   --%test(DG1 segments replace the visit's diagnoses, with DG1-15 marking the principal)
-  procedure diagnoses;
+  procedure diagnosis_ranking;
 
   --%test(A unit with no alias is an error on the message, naming the code)
   procedure unmapped_unit;

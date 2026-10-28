@@ -57,8 +57,7 @@ create or replace package test_fixture as
     p_control    varchar2 default null
   ) return varchar2;
 
-  -- Receives a message, processes the queue, and returns the ACK.
-  function send(p_raw varchar2) return varchar2;
+  -- Receives a message and processes the queue.
   procedure send(p_raw varchar2);
 
   -- The status and error of the message with this control id.
