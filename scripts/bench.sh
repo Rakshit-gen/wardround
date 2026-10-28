@@ -2,9 +2,10 @@
 # Runs the whole path once for each feed size in $SIZES, given as ED
 # visits a day:direct admissions a day, each on a freshly installed
 # schema and an empty shared pool: generates 45 days, sends them over
-# MLLP, applies them and prints the statements that took longest, times
-# the March reports over 5 runs each, maps the unmapped codes and
-# reprocesses. Needs install.sh run first and wardround installed.
+# MLLP, applies them and prints the statements that took longest and
+# the plan of the slowest SQL, times the March reports over 5 runs each,
+# maps the unmapped codes and reprocesses. Needs install.sh run first
+# and wardround installed.
 #   SIZES="30:3 90:9" ./scripts/bench.sh
 set -euo pipefail
 
@@ -64,6 +65,13 @@ select executions, round(elapsed_time / 1e6, 2) as secs, substr(sql_text, 1, 150
  where parsing_schema_name = upper('$APP_USER')
  order by elapsed_time desc
  fetch first 6 rows only;
+column plan_table_output format a200
+select t.plan_table_output
+  from (select sql_id, child_number from v\$sql
+         where parsing_schema_name = upper('$APP_USER')
+           and command_type <> 47 -- PL/SQL blocks have no plan
+         order by elapsed_time desc fetch first 1 row only) s,
+       table(dbms_xplan.display_cursor(s.sql_id, s.child_number, 'TYPICAL')) t;
 exit
 SQL
   wardround report --from 2026-03-01 --to 2026-04-01 --timing --repeat 5 --out /dev/null
