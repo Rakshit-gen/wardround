@@ -215,5 +215,14 @@ create or replace package body test_adt as
     ut.expect(codes.meaning(test_fixture.visit('F1').encntr_type_cd)).to_equal('INPATIENT');
     ut.expect(test_fixture.visit('F1').inpatient_dt).to_equal(hm('09:40'));
   end a06_changes_to_inpatient;
+
+  procedure transfer_cancelled_visit is
+  begin
+    test_fixture.send(test_fixture.adt('A01', 'F2', hm('09:30'), '5E', p_class => 'I'));
+    test_fixture.send(test_fixture.adt('A11', 'F2', hm('09:45')));
+    test_fixture.send(test_fixture.adt('A02', 'F2', hm('10:00'), '4W', p_control => 'K1'));
+    ut.expect(test_fixture.status_of('K1')).to_equal('ERROR');
+    ut.expect(test_fixture.error_of('K1')).to_equal('visit F2 is cancelled');
+  end transfer_cancelled_visit;
 end test_adt;
 /

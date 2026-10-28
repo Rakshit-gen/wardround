@@ -54,5 +54,8 @@ create or replace package test_adt as
 
   --%test(A06 makes an emergency visit inpatient like A01)
   procedure a06_changes_to_inpatient;
+
+  --%test(A transfer for a cancelled visit is an error)
+  procedure transfer_cancelled_visit;
 end test_adt;
 /
