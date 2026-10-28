@@ -8,11 +8,14 @@ jobs:
   python:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      matrix:
+        python: ["3.10", "3.13"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          python-version: ${{ matrix.python }}
       - run: pip install -e ".[dev]"
       - run: ruff check .
       - run: ruff format --check .
