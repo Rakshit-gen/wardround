@@ -129,3 +129,28 @@ ignored, whatever its status (commit 09ca568). This takes in the
 earlier rule that a late preliminary result is ignored. The utPLSQL
 test `final_after_correction` sends the correction first and the final
 after, and checks the correction is still current.
+
+## 5. A date with dashes was read as 1 January
+
+**Symptom.** Run 40688454308 failed one utPLSQL test,
+`bad_time_still_stored`, which sends a message whose MSH-7 is
+`2026-03-02` and expects it stored with no time:
+
+```
+Actual:  2026-01-01T00:00:00 (date) was expected to be null
+66 tests, 1 failed, 0 errored, 0 disabled, 0 warning(s)
+```
+
+**Cause.** `hl7.ts` takes the leading digits (4 to 14 of them, an even
+number) and then allowed anything that started with `.`, `+` or `-`
+after them, meaning to skip fractions of a second and a UTC offset. In
+`2026-03-02` the digits are `2026` and the rest, `-03-02`, starts
+with `-`, so it was taken for an offset and the value read as the
+start of 2026. A registration system sending ISO dates would have put
+every visit on 1 January without an error.
+
+**Fix.** After the digits only `.` and up to four digits, then `+` or
+`-` and exactly four digits, are allowed (commit 80077c9). Anything else
+raises bad_field, which `inbound.receive` turns into a null event time
+and `adt` into an error on the message. The test `dashed_date` checks
+it. Run 40688858961 passed all 67 tests.
