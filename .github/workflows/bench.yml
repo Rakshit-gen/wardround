@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      sizes:
+        description: ED visits a day:direct admissions a day, space separated
+        default: "30:3 90:9 270:27"
 
 jobs:
   bench:
@@ -30,7 +34,7 @@ jobs:
 
       - name: Benchmark at one, three and nine times the default feed
         env:
-          SIZES: "30:3 90:9 270:27"
+          SIZES: ${{ inputs.sizes || '30:3 90:9 270:27' }}
         run: |
           mkdir -p build
           ./scripts/bench.sh 2>&1 | tee build/bench.txt
