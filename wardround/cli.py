@@ -1,6 +1,7 @@
 """wardround generate | send | listen | process | status | map | reprocess | report"""
 
 import argparse
+import statistics
 import sys
 import time
 from collections import Counter
@@ -104,6 +105,16 @@ def reprocess(args) -> None:
     print(f"reprocessed {before} messages in error; {after} still in error")
 
 
+def timing(secs: list[float]) -> str:
+    """One run's time, or the median, fastest and slowest of several."""
+    if len(secs) == 1:
+        return f"{secs[0]:.3f} s"
+    return (
+        f"median {statistics.median(secs):.3f} s, min {min(secs):.3f} s, "
+        f"max {max(secs):.3f} s over {len(secs)} runs"
+    )
+
+
 def report(args) -> None:
     from wardround import db
 
@@ -113,10 +124,14 @@ def report(args) -> None:
     results, failed = [], []
     for n in names:
         try:
-            began = time.perf_counter()
-            results.append((n, *reports.run(conn, n, args.from_day, args.to_day)))
+            secs = []
+            for _ in range(args.repeat):
+                began = time.perf_counter()
+                columns, rows = reports.run(conn, n, args.from_day, args.to_day)
+                secs.append(time.perf_counter() - began)
+            results.append((n, columns, rows))
             if args.timing:
-                print(f"{n}: {time.perf_counter() - began:.3f} s", file=sys.stderr)
+                print(f"{n}: {timing(secs)}", file=sys.stderr)
         except db.oracledb.DatabaseError as e:
             print(f"report {n} failed: {e}", file=sys.stderr)
             failed.append(n)
@@ -185,6 +200,7 @@ def main(argv=None) -> None:
     r.add_argument("--format", choices=["text", "csv", "html"], default="text")
     r.add_argument("--out")
     r.add_argument("--timing", action="store_true", help="print how long each report took")
+    r.add_argument("--repeat", type=int, default=1, help="run each report this many times")
     r.set_defaults(func=report)
 
     args = p.parse_args(argv)
